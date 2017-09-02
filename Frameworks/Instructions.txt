@@ -1,0 +1,324 @@
+Mouse{
+	func	x				returns screen x coord
+	func	y				returns screen y coord
+	func 	relx			returns mouse's relative x position to parameter
+	func 	rely			returns mouse's relative y position to parameter
+	func 	reld			returns mouse's relative distance to parameter
+	func 	rela			returns mouse's relative angle to parameter
+	func	getMouse		returns copy of framework in object form
+	func 	setcanvas		sets canvas where the mouse obj resides
+	func 	setupListeners	takes obj with down up and move values for where to send mouse input
+							ex setupListeners({down:U.down.bind(U), up:U.up.bind(U), move:U.move.bind(U)})
+}
+Physics{
+
+}	
+UI {
+	Follow (follower target offx offy scale) {
+		follower updates position to match target with offset offx, offy and scale
+		bool following - whether or not to update followers position
+	}
+	Button (x y w h) {
+		defaults to 0 0 0 0 if not provided
+		cropped true if size not 0		limits rendering to button size
+		color 	grey 		contentcolor
+		bcolor	darkgrey	bordercolor
+		pcolor 	black 		pressedcolor
+		key 	empty 		keyboardshortcut
+		onclick		nothing	function called on click
+		inrender(g)	nothing	function called to render custom button contents
+	}
+	DBox (x y w h) {
+		defaults to 0 0 0 0 if not provided
+		alphamod	1		% change in alpha during render
+		cropped true if size not 0		limits rendering to dbox size
+		transparent	false	unable to click/see through
+		color		clear	background color
+		bcolor		clear	border color
+		pcolor		black	pause color
+		getq()		returns list of contents
+		
+		Camera (centerx centery w h) {
+			x centerx	camera pos x
+			y centery	camera pos y
+			grid 		-1		no grid
+			Grid (cam dx dy col width) {
+				dx dist between vert lines
+				dy dist between horz lines
+				col color of lines
+				width of lines
+			}
+			reset()		centers position in container, gets container size, scale = 1, grid = -1
+			centerZero()	position = 0,0
+			setGrid (on, dx, dy, color, width)
+				on - grid on/off
+				dx dy color width -> new grid
+			rely(y)
+			relx(x)		returns x/y in camera relative to out of camera
+			getzoom()
+			zoom(s)		zoom relative
+			zoomto(s)	zoom absolute
+		}
+		
+		camera	defaults to centered with full size
+		invisible 	false 	doesnt render
+		frozen 		false 	doesnt update
+		hidden 		false 	invisible and frozen
+		mouseevent (type e m)
+			type - down up move
+			e - event
+			m - mouse obj
+			return event finshed
+		keyevent (type c)
+			type - down up press
+			c - key event obj
+		add (system name)
+			system - thing to be added
+			name - path
+				^ - go to container
+				. - go to sub container
+				ex ^cont1.cont2 is go up one, go into cont1, then add system under "cont2"
+		remove (sorn)
+			remove system by name or reference depending on type of sorn
+		get (name)
+			get system by path
+		has (name)
+			returns whether or not system with given name is in dbox
+		stretchfit (inner)
+			stretches camera so inner object is as large as possible
+		getbounds()
+			returns object with coords of bounding box in form {u:u, d:d, r:r, l:l}
+		inbounds (x y)
+			returns whether or not point (x y) is in bounds
+		getarea()
+			return pixel area of dbox
+		cumZoom()
+			return cumlative zoom from screen to self
+		mouseonbox (m)
+			returns whether gives mouse object is within bounds
+		screeny(y)
+		screenx(x) finds screen x of x coord within dbox
+	}
+}
+Utils {
+	Listener (cond oncomp)
+		every update checks condition, 
+		if true calls oncomp, 
+		if oncomp returns true, 
+		removes self from container
+	KeyListener (type key oncomp)
+		if type is neither down nor up, removes self
+		if key event of type is detected, call oncomp
+		if oncomp returns true, 
+		removes self from container
+	MouseListener (type cond onomp)
+		if type is neither down, up, nor move, removes self
+		if mouse event of type is detected and cond is met, call oncomp
+		if oncomp returns true, 
+		removes self from container
+	Timer (dur)
+		dur 	0
+		count	0
+		running 	false
+		loop 		false
+		autocons	false
+		setKilloncomp(bool)		whether or nt to self remove on complete
+		setLoop(bool)			loop or nto
+		setAuto(bool oncomp)	set auto complete with oncomp
+		start(finished)			begin timer (already finished)
+		ready()					is timer ready
+		progress				percent done
+		consume					acknowledge finish
+		update					updates if running and autocons if necessary
+	Sequence (seq)
+	TimedSequence (seq)
+	Repeater (reps)
+}	
+Assets {
+
+}	
+Drawing {
+	drawCText(g txt x y)
+		draw txt on g centered at x y
+}
+Keys {
+
+}	
+Main {
+	startLoop()
+		checks all frameworks are ready then begins loop
+	createCanvas (w h)
+		creates canvas with size wxh or default 800x600 and adds to doc body
+	setLoop(loop)
+		sets given functon as main loop
+	allLoaded() checks if all frameworks are loaded
+	size (o)
+		returns parameters in object
+	exists(o)
+		returns if object is no undefined
+}	
+
+
+silk touch
+
+
+assets todo
+tinderbox
+npcs
+walls
+	stone
+		thin
+		med
+	wood
+		thin
+		med
+		thick
+	dirt
+		thin
+		med
+		thick
+
+current goals
+equip stuff
+npcs
+	lumberjack	woodcut	planks
+	artisan		woodcraft leather jewlery
+	thief		thieving picklock chests
+	miner		mining breaking chests
+	blacksmith	smthng
+	combat instructors
+		melee
+		range
+		mage
+	banker		bankng ge
+		
+combat
+	melee
+	range
+	mage
+tutorville
+	dialogue
+	skills
+	mining
+	smithing
+	woodcutting
+	woodcrafting
+	banking
+	combat
+		melee
+		range
+		mage
+skills
+
+farming
+finish sprites
+woodcrafting
+
+fixes
+
+
+Woodcutting
+	cutting various trees
+Firemaking
+	burning various logs
+Farming
+	planting and harvesting various crops
+Mining
+Smithing
+
+
+-skills
+	-woodcutting
+		-cut trees for logs and xp, trees dont respawn
+		-higher tier trees spawn randomly according to rarity
+		-dig up stump and chop into woodchips for slight bonus xp
+			-woodchips stackable and can be used to keep
+				weeds out of farming patch once cleared
+			-can also be added to fire for small fm xp
+	-firemaking
+		-burn logs for xp, better logs = better xp
+		-once fire burns down slightly, add more logs for more xp and longer burn
+		-ashes on ground after fire burns out
+	-farming
+		-patches spawn randomly 3-9 tiles large
+		-spawn with weeds, can be cleared but weeds grow back unless 
+			something planted in tile or woodchips spread
+	-mining
+		-dig further into a hole with ladder in inventory to go underground
+		-find minable ores (random like trees or in groups?)
+		-depending on mining lvl, descend further for better ores using another ladder
+		-dig tunnels to move around
+		
+-basics of skills
+	-attack
+		-accuracy, use better weapons
+	-strength
+		-power, hit higher
+	-defence
+		-blocking, wield better armor
+	-ranged
+		-fire rate, better bows/arrows
+	-prayer
+		-bury bones, burnt offerings
+	-magic
+	-health
+		-more hp, less vunerable to poison
+	-agility
+		-run longer walk faster
+	-woodcutting
+		-cut faster, better trees
+	-fishing
+	-cooking
+	-construction
+	-hunter
+	-thieving
+4f
+
+
+
+
+
+
+
+
+
+
+
+===woodcutting=== 
+	cut trees get logs
+	break barricades
+	
+===magic===
+	teleport 
+	attack 
+	heal 
+	imbue
+	
+===ranged===
+	faster 
+	harder 
+	special arrows
+	
+===construction===	
+	stashes 
+	chests 
+	house
+	
+===mining===
+	ores 
+	underground
+	
+===crafting===
+	range
+	mage 
+	armor
+	weapons
+	
+===smithing===
+	melee 
+	armor 
+	weapons 
+	
+===farming===
+	patches
+	collectors
