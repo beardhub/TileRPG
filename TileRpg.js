@@ -200,6 +200,8 @@ function TileRpgFramework(){
 			user.inrender = function(g){
 				var text = uentry.gettext();
 				g.font = "30px Arial";
+				if (text == "")
+					text = "Username";
 				var x = 5;
 				while(g.measureText(text).width > this.w-x)
 					x--;
@@ -208,6 +210,8 @@ function TileRpgFramework(){
 			pass.inrender = function(g){
 				var text = pentry.gettext();
 				g.font = "30px Arial";
+				if (text == "")
+					text = "Password";
 				var x = 5;
 				while(g.measureText(text).width > this.w-x)
 					x--;
