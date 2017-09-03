@@ -2,10 +2,6 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-io.configure(function () { 
-  io.set("transports", ["xhr-polling"]); 
-  io.set("polling duration", 10); 
-});
 //var io = require('socket.io', { rememberTransport: false, transports: ['WebSocket', 'Flash Socket', 'AJAX long-polling'] })(http);//.listen(8080);
 var port = process.env.PORT || 8080;
 app.use(express.static(__dirname));
@@ -28,6 +24,9 @@ function sendupdates(){
 	for (var p in players)
 		if (p !== "sets" && players[p].online)
 			plays.push(players[p]);
+		io.emit("updateworld",worlddata);
+		io.emit("getplayers",plays);
+	/*	return;
 	for (var i = 0; i < clients.length; i++){
 		clients[i].emit("updateworld",worlddata);
 		//var others = [];
@@ -35,7 +34,7 @@ function sendupdates(){
 		//	if (j !== i)
 		//		others.push(clients[j]);
 		clients[i].emit("getplayers",plays);
-	}
+	}*/
 }
 setInterval(sendupdates,100);
 function findClientsSocket(roomId, namespace) {
