@@ -158,6 +158,8 @@ function TileRpgFramework(){
 				t.add(new UI.Button(500,400,200,50).sets({color:"blue",text:"Load Game",key:"l",onclick:function(){StartGame(false);}}));
 				return t;
 			}
+			Trpg.joystick = new Ms.Joystick();
+			H.container.add(Trpg.joystick);
 			H.newtab("TitleMenu", Title());
 			H.newtab("Gameplay",Gameplay());
 			H.settab("TitleMenu");
@@ -772,6 +774,10 @@ function TileRpgFramework(){
 				if (K.Keys.A.down || K.Keys.left.down)	dx--;
 				if (K.Keys.S.down || K.Keys.down.down)	dy++;
 				if (K.Keys.D.down || K.Keys.right.down)	dx++;
+				if (Trpg.joystick){
+					dx = Trpg.joystick.dx();
+					dy = Trpg.joystick.dy();
+				}
 				
 				var speed = 170*dlt;
 				if (!Trpg.board.textinp.hasfocus())
@@ -3236,6 +3242,12 @@ function TileRpgFramework(){
 				g.translate(this.container.camera.x-16,this.container.camera.y-16)
 				//g.drawImage(Ast.i("playerS"),0,0);
 				Trpg.player.render(g);
+				g.save();
+				g.translate(16,16);
+				g.fillStyle = "white";
+				g.globalAlpha = .5;
+				Trpg.joystick.renderj(g);
+				g.restore();
 				if (Trpg.player.attackdelay.progress() < .2
 					&& Trpg.player.target !== -1 
 					&& Trpg.player.target.loc.inmdist(Trpg.player.loc,Trpg.player.attrange)
