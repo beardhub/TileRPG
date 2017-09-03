@@ -4,6 +4,7 @@ var http = require('http').Server(app);
 //console.log(http);
 http.transports = [ 'websocket' ];
 var io = require('socket.io')(http);
+//io.set('transports', ['websocket']);//============
 //var io = require('socket.io', { rememberTransport: false, transports: ['WebSocket', 'Flash Socket', 'AJAX long-polling'] })(http);//.listen(8080);
 var port = process.env.PORT || 8080;
 app.use(express.static(__dirname));

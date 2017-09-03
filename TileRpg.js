@@ -180,7 +180,7 @@ function TileRpgFramework(){
 		}
 		H.newtab("TitleMenu", Title());
 		function MultiplayerLogin(){
-			Trpg.socket = io();
+			Trpg.socket = io({transports: ['websocket'], upgrade: false});
 			var m = new UI.DBox();
 			m.add(new (function(){
 				this.render = function(g){
