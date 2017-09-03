@@ -1,7 +1,7 @@
 function TileRpgFramework(){
 	this.frameworkName = "TileRpgFramework";
 	var Trpg = this;
-	this.ismobile = window.mobilecheck();
+	this.ismobile = true;//window.mobilecheck();
 	this.cheating = false;
 	this.WorldLoc = function(wx, wy, cx, cy, dim, mx, my){
 		this.wx = wx || 0;
@@ -145,8 +145,15 @@ function TileRpgFramework(){
 		}
 		window.onbeforeunload = Trpg.SaveGame;
 		function MobilePopulate(){
+			H.w = 1200;
+			H.h = 800;
+			//H.bcolor = "clear";
+			//H.color = "clear";
+			H.container.stretchfit(H);
 			function Title(){
-				var t = new UI.DBox();
+				var t = new UI.DBox(0,0,1200,800);
+				t.bcolor = "black";
+				t.color = "grey";
 				t.add(new (function(){
 					this.render = function(g){
 						g.font = "100px Arial";
@@ -158,23 +165,31 @@ function TileRpgFramework(){
 				t.add(new UI.Button(500,400,200,50).sets({color:"blue",text:"Load Game",key:"l",onclick:function(){StartGame(false);}}));
 				return t;
 			}
+			function MobileGameplay(){
+				var g = new UI.DBox();
+				var b;
+				g.add(b = new UI.DBox(0,0,800,800),"Board");
+				//H.container.stretchfit(b);
+				b.bcolor = b.color = "black";			
+				return g;
+			}
 			Trpg.joystick = new Ms.Joystick();
 			H.container.add(Trpg.joystick);
 			H.newtab("TitleMenu", Title());
-			H.newtab("Gameplay",Gameplay());
+			H.newtab("Gameplay",MobileGameplay());
 			H.settab("TitleMenu");
 		}
-		Trpg.Home = H
+		Trpg.Home = H;
 		H.empty();
+		if (Trpg.ismobile){
+			MobilePopulate();
+			return;
+		}
 		H.bcolor = "black";
 		H.color = "grey";
 		H.w = 1200;
 		H.h = 800;
 		H.container.stretchfit(H);
-		if (Trpg.ismobile){
-			MobilePopulate();
-			return;
-		}
 		//H.camera.reset();
 		//H.add(Trpg.textinp = new Utils.TextInput("allchars"))
 		function Title(){
@@ -459,6 +474,11 @@ function TileRpgFramework(){
 			
 			//window.onbeforeunload = Trpg.SaveGame;
 			H.settab("Gameplay");
+			if (Trpg.ismobile){
+				H.w = 800;
+				H.h = 800;
+				H.container.stretchfit(H);
+			}
 		}
 	}
 	/*function JoinMultiplayer(){
@@ -3242,12 +3262,14 @@ function TileRpgFramework(){
 				g.translate(this.container.camera.x-16,this.container.camera.y-16)
 				//g.drawImage(Ast.i("playerS"),0,0);
 				Trpg.player.render(g);
-				g.save();
-				g.translate(16,16);
-				g.fillStyle = "white";
-				g.globalAlpha = .5;
-				Trpg.joystick.renderj(g);
-				g.restore();
+				if (Trpg.joystick){
+					g.save();
+					g.translate(16,16);
+					g.fillStyle = "white";
+					g.globalAlpha = .5;
+					Trpg.joystick.renderj(g);
+					g.restore();
+				}
 				if (Trpg.player.attackdelay.progress() < .2
 					&& Trpg.player.target !== -1 
 					&& Trpg.player.target.loc.inmdist(Trpg.player.loc,Trpg.player.attrange)
