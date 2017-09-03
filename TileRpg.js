@@ -133,6 +133,18 @@ function TileRpgFramework(){
 		}
 	}
 	this.Populate = function(H){
+		function MobilePopulate(){
+			function Title(){
+				var t = new UI.DBox();
+				t.add(new (function(){
+					this.render = function(g){
+						g.font = "100px Arial";
+						g.fillStyle = "white";
+						Drw.drawCText(g, "TileRPG", 600,200);
+					}
+				})());
+			}
+		}
 		Trpg.Home = H
 		H.empty();
 		H.bcolor = "black";
@@ -140,6 +152,10 @@ function TileRpgFramework(){
 		H.w = 1200;
 		H.h = 800;
 		H.container.stretchfit(H);
+		if (window.mobilecheck()){
+			MobilePopulate();
+			return;
+		}
 		//H.camera.reset();
 		//H.add(Trpg.textinp = new Utils.TextInput("allchars"))
 		function Title(){
@@ -437,6 +453,7 @@ function TileRpgFramework(){
 		}
 		window.onbeforeunload = Trpg.SaveGame;
 	}
+	
 	/*function JoinMultiplayer(){
 		Trpg.socket = io();
 		Trpg.socket.emit("newplayer","zack");
