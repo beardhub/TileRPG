@@ -140,10 +140,16 @@ function TileRpgFramework(){
 					this.render = function(g){
 						g.font = "100px Arial";
 						g.fillStyle = "white";
-						Drw.drawCText(g, "TileRPG", 600,200);
+						Drw.drawCText(g, "TileRPG Mobile", 600,200);
 					}
 				})());
+				t.add(new UI.Button(500,300,200,50).sets({color:"green",text:"New Game",key:"n",onclick:function(){StartGame(true);}}));
+				t.add(new UI.Button(500,400,200,50).sets({color:"blue",text:"Load Game",key:"l",onclick:function(){StartGame(false);}}));
+				return t;
 			}
+			H.newtab("TitleMenu", Title());
+			H.newtab("Gameplay",Gameplay());
+			H.settab("TitleMenu");
 		}
 		Trpg.Home = H
 		H.empty();
