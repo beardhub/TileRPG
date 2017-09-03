@@ -65,10 +65,11 @@ function MouseFramework(){
 		document.body.addEventListener("contextmenu",function(e){		e.preventDefault()});
 		document.body.addEventListener("touchstart",(function(mouse,e){	//e.preventDefault(); 
 			mouse.upos(e.touches[0]);
-			alert(mouse.x);
+			//alert(mouse.x);
 			//console.log(e.touches[0]);
+			alert(e.touches[0]);
 			//mouse.down = true;	
-			that.down(e,mouse);
+			that.down(e.touches[0],mouse);
 		}).bind(that,mouse));
 		document.body.addEventListener("touchend",(function(mouse,e){	//e.preventDefault();
 		mouse.upos(e.touches[0]);	that.up(e,mouse);
