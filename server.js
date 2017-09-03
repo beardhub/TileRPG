@@ -1,8 +1,12 @@
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
-//var io = require('socket.io')(http);
-var io = require('socket.io', { rememberTransport: false, transports: ['WebSocket', 'Flash Socket', 'AJAX long-polling'] })(http);//.listen(8080);
+var io = require('socket.io')(http);
+io.configure(function () { 
+  io.set("transports", ["xhr-polling"]); 
+  io.set("polling duration", 10); 
+});
+//var io = require('socket.io', { rememberTransport: false, transports: ['WebSocket', 'Flash Socket', 'AJAX long-polling'] })(http);//.listen(8080);
 var port = process.env.PORT || 8080;
 app.use(express.static(__dirname));
 var worlddata = {
@@ -110,12 +114,6 @@ io.on('connection', function(socket){
 	socket.on('disconnect', function(){
 		console.log('user disconnected');
 	});
-});
-
-io.on('connection', function(socket){
-socket.on('chat message', function(msg){
-console.log('message: ' + msg);
-});
 });
 
 http.listen(port, function(){
