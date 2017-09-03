@@ -133,14 +133,14 @@ function TileRpgFramework(){
 		}
 	}
 	this.Populate = function(H){
-		Trpg.SaveGame = function(){
+		Trpg.SaveGame = function(force){
 			if (Trpg.socket){
 				Trpg.socket.emit("saveplayer",Trpg.player.save());
 				Trpg.socket.emit("gooffline",Trpg.player.username);
 				//return null;
 			}
-			if (Trpg.world.getChanges()!="none")
-				localStorage.setItem("TRPGSaveSlot"/*+this.slot*/,JSON.stringify(Trpg.world.getChanges()));
+			if (Trpg.world.getChanges(force)!="none")
+				localStorage.setItem("TRPGSaveSlot"/*+this.slot*/,JSON.stringify(Trpg.world.getChanges(force)));
 			return null;
 		}
 		window.onbeforeunload = Trpg.SaveGame;
@@ -2777,11 +2777,9 @@ function TileRpgFramework(){
 				}
 			}
 			if (Trpg.socket)	Trpg.socket.emit("sendchanges",Trpg.world.changes);
-			if (Trpg.ismobile){
-				if (Trpg.world.getChanges(true)!="none")
-					localStorage.setItem("TRPGSaveSlot"/*+this.slot*/,JSON.stringify(Trpg.world.getChanges(true)));
-				alert("saved");
-			}
+			if (Trpg.ismobile)	Trpg.SaveGame(true);
+				//&& Trpg.world.getChanges(true)!="none")
+				//localStorage.setItem("TRPGSaveSlot",JSON.stringify(Trpg.world.getChanges(true)));
 		}
 		this.ground = new (function(){
 			function grounditem(item){
