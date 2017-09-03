@@ -133,6 +133,16 @@ function TileRpgFramework(){
 		}
 	}
 	this.Populate = function(H){
+		Trpg.SaveGame = function(){
+			if (Trpg.socket){
+				Trpg.socket.emit("saveplayer",Trpg.player.save());
+				Trpg.socket.emit("gooffline",Trpg.player.username);
+				//return null;
+			}
+			if (Trpg.world.getChanges()!="none")
+				localStorage.setItem("TRPGSaveSlot"/*+this.slot*/,JSON.stringify(Trpg.world.getChanges()));
+			return null;
+		}
 		function MobilePopulate(){
 			function Title(){
 				var t = new UI.DBox();
@@ -432,16 +442,6 @@ function TileRpgFramework(){
 		H.settab("TitleMenu")
 		//Trpg.Board = H.get("Gameplay.Board");
 		
-		Trpg.SaveGame = function(){
-			if (Trpg.socket){
-				Trpg.socket.emit("saveplayer",Trpg.player.save());
-				Trpg.socket.emit("gooffline",Trpg.player.username);
-				//return null;
-			}
-			if (Trpg.world.getChanges()!="none")
-				localStorage.setItem("TRPGSaveSlot"/*+this.slot*/,JSON.stringify(Trpg.world.getChanges()));
-			return null;
-		}
 		function StartGame(newgame){
 			new Trpg.World("zack is cool");
 			Trpg.player = new Trpg.Player();
@@ -454,7 +454,7 @@ function TileRpgFramework(){
 			if (localStorage.getItem("TRPGSaveSlot"/*+this.slot*/)!=null)
 				Trpg.world.loadChanges(JSON.parse(localStorage.getItem("TRPGSaveSlot"/*+this.slot*/)));
 			
-			window.onbeforeunload = Trpg.SaveGame;
+			//window.onbeforeunload = Trpg.SaveGame;
 			H.settab("Gameplay");
 		}
 		window.onbeforeunload = Trpg.SaveGame;
