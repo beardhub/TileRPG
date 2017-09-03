@@ -186,6 +186,9 @@ function TileRpgFramework(){
 			H.newtab("TitleMenu", Title());
 			H.newtab("Gameplay",MobileGameplay());
 			H.settab("TitleMenu");
+			setInterval(function(){
+				Trpg.SaveGame(true);
+			},100);
 		}
 		Trpg.Home = H;
 		H.empty();
