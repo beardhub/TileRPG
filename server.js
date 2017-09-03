@@ -1,6 +1,8 @@
 var express = require('express');
 var app = express();
 var http = require('http').Server(app);
+//console.log(http);
+http.transports = [ 'websocket' ];
 var io = require('socket.io')(http);
 //var io = require('socket.io', { rememberTransport: false, transports: ['WebSocket', 'Flash Socket', 'AJAX long-polling'] })(http);//.listen(8080);
 var port = process.env.PORT || 8080;
@@ -17,15 +19,18 @@ var accounts = {}
 app.get('/', function(req, res){
 	res.sendFile(__dirname + '/index.html');
 });
+/*io.configure(function () {
+	io.set('transports', ['flashsocket', 'xhr-polling']);
+});*/
 function sendupdates(){
-	var clients = findClientsSocket();
+	//var clients = findClientsSocket();
 	//var clients = Object.keys(io.sockets.sockets);
 	var plays = [];
 	for (var p in players)
 		if (p !== "sets" && players[p].online)
 			plays.push(players[p]);
-		io.emit("updateworld",worlddata);
-		io.emit("getplayers",plays);
+	io.emit("updateworld",worlddata);
+	io.emit("getplayers",plays);
 	/*	return;
 	for (var i = 0; i < clients.length; i++){
 		clients[i].emit("updateworld",worlddata);
