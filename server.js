@@ -145,7 +145,10 @@ io.on('connection', function(socket){
 				plays.push(players[p]);
 		io.emit("changeme",plays);
 	});
-	
+	/*socket.on("removeplayer",function(username){
+		if (players[username])
+			players[username].online = false;
+	});*/
 	
 	/*socket.on("leave",function(data){
 		players[data.playername] = data.playerdata;

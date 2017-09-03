@@ -143,6 +143,7 @@ function TileRpgFramework(){
 		Trpg.SaveGame = function(force){
 			if (Trpg.socket){
 				Trpg.socket.emit("saveplayer",Trpg.player.save());
+				//Trpg.socket.emit("sendchanges",Trpg.world.changes);
 				Trpg.socket.emit("gooffline",Trpg.player.username);
 				//return null;
 			}
@@ -303,6 +304,7 @@ function TileRpgFramework(){
 				//alert("Login successful");
 				new Trpg.World(data.w.seed);
 				Trpg.player = new Trpg.Player().load(data.p);
+				Trpg.world.loadChanges(data.w);
 				H.add(Trpg.board,"Gameplay.Board.");
 				H.add(Trpg.invent,"Gameplay.InvTabs.Invent.");
 				Trpg.socket.emit("saveplayer",Trpg.player.save());
@@ -969,6 +971,13 @@ function TileRpgFramework(){
 						return;
 					}
 				return;
+			/*case "removeplayer":
+				if (!p.hasprivilege("owner")){
+					alert("you need owner privileges for this command");
+					return;
+				}
+				Trpg.socket.emit("removeplayer",vals.shift());
+				return;*/
 			case "help":
 				var str = "command list:\n";
 				str+="/listplayers -> lists online players and their coordinates\n";
