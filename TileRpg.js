@@ -168,8 +168,9 @@ function TileRpgFramework(){
 						Drw.drawCText(g, "TileRPG Mobile", 600,200);
 					}
 				})());
-				t.add(new UI.Button(500,300,200,50).sets({color:"green",text:"New Game",key:"n",onclick:function(){StartGame(true);}}));
-				t.add(new UI.Button(500,400,200,50).sets({color:"blue",text:"Load Game",key:"l",onclick:function(){StartGame(false);}}));
+				t.add(new UI.Button(400,300,400,100).sets({color:"green",text:"New Game",key:"n",onclick:function(){StartGame(true);}}));
+				t.add(new UI.Button(400,450,400,100).sets({color:"blue",text:"Load Game",key:"l",onclick:function(){StartGame(false);}}));
+				t.add(new UI.Button(400,600,400,100).sets({color:"purple",text:"Multiplayer",key:"l",onclick:function(){return;StartGame(false);}}));
 				return t;
 			}
 			function MobileGameplay(){
@@ -470,8 +471,6 @@ function TileRpgFramework(){
 		function StartGame(newgame){
 			new Trpg.World("zack is cool");
 			Trpg.player = new Trpg.Player();
-			H.add(Trpg.board,"Gameplay.Board.");
-			H.add(Trpg.invent,"Gameplay.InvTabs.Invent.");
 			//Trpg.player = new Trpg.Player();
 			if (newgame)
 			//Invent.add(Trpg.invent);
@@ -479,6 +478,8 @@ function TileRpgFramework(){
 			if (localStorage.getItem("TRPGSaveSlot"/*+this.slot*/)!=null)
 				Trpg.world.loadChanges(JSON.parse(localStorage.getItem("TRPGSaveSlot"/*+this.slot*/)));
 			
+			H.add(Trpg.board,"Gameplay.Board.");
+			H.add(Trpg.invent,"Gameplay.InvTabs.Invent.");
 			//window.onbeforeunload = Trpg.SaveGame;
 			H.settab("Gameplay");
 			if (Trpg.ismobile){
@@ -6485,6 +6486,8 @@ function TileRpgFramework(){
 		this.setTile = function(tile, wl){
 			this.tiles[wl.cy][wl.cx] = tile.setWl(wl.copy());
 			Trpg.Map.addtile(tile);
+			if (Trpg.world.changed.indexOf(this.code)==-1)
+				Trpg.world.changed.push(this.code);
 		}
 		this.loadChanges = function(){
 			var changes = Trpg.world.changes[this.code] && JSON.parse(Trpg.world.changes[this.code]) || [];
