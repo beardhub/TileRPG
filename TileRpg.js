@@ -1,6 +1,7 @@
 function TileRpgFramework(){
 	this.frameworkName = "TileRpgFramework";
 	var Trpg = this;
+	alert(window.mobilecheck());
 	this.cheating = false;
 	this.WorldLoc = function(wx, wy, cx, cy, dim, mx, my){
 		this.wx = wx || 0;
