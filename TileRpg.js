@@ -184,9 +184,9 @@ function TileRpgFramework(){
 			var m = new UI.DBox();
 			m.add(new (function(){
 				this.render = function(g){
-					g.font = "70px Arial";
+					g.font = "100px Arial";
 					g.fillStyle = "white";
-					Drw.drawCText(g, "Login", 600,200);
+					Drw.drawCText(g, "Multiplayer Login", 600,200);
 				}
 			})());
 			var user, pass;
