@@ -278,7 +278,7 @@ function TileRpgFramework(){
 					if (p !== "sets" && players[p].username !== Trpg.player.username && exists(players[p].loc))
 						Trpg.otherplayers.push(new Trpg.OtherPlayer(players[p]));
 			});
-			
+			H.add(new Utils.Timer(.1).start().setLoop(true).setAuto(true,function(){Trpg.socket.emit("updateme");}));
 			
 			return m;
 		}

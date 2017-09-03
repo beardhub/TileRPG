@@ -41,7 +41,7 @@ function sendupdates(){
 		clients[i].emit("getplayers",plays);
 	}*/
 }
-setInterval(sendupdates,100);
+//setInterval(sendupdates,100);
 function findClientsSocket(roomId, namespace) {
     var res = []
     // the default namespace is "/"
@@ -106,9 +106,16 @@ io.on('connection', function(socket){
 		)	return console.log("same");
 		*/worlddata.changes = data;
 		worlddata.ups++;
-		sendupdates();
+		//sendupdates();
 	});
-	
+	socket.on("updateme",function(data){
+		var plays = [];
+		for (var p in players)
+			if (p !== "sets" && players[p].online)
+				plays.push(players[p]);
+		socket.emit("updateworld",worlddata);
+		socket.emit("getplayers",plays);
+	});
 	
 	
 	
