@@ -677,8 +677,9 @@ function TileRpgFramework(){
 				//Trpg.Map.load(changes.map);
 				//Trpg.invent.loadsave(changes.invent);
 		}
-		this.getChanges = function(){
-			Trpg.board.save();
+		this.getChanges = function(nosave){
+			if (!nosave)
+				Trpg.board.save();
 			//var d = new Trpg.WorldLoc(0,0,3,3).dist(Trpg.player.loc);
 			//var d = Trpg.board.player.firstloc.dist(Trpg.player.loc);
 			//if (this.changes.length == 0 && d == 0){
@@ -2777,7 +2778,8 @@ function TileRpgFramework(){
 			}
 			if (Trpg.socket)	Trpg.socket.emit("sendchanges",Trpg.world.changes);
 			if (Trpg.ismobile){
-				Trpg.SaveGame();
+				if (Trpg.world.getChanges(true)!="none")
+					localStorage.setItem("TRPGSaveSlot"/*+this.slot*/,JSON.stringify(Trpg.world.getChanges(true)));
 				alert("saved");
 			}
 		}
