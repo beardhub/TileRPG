@@ -1,7 +1,7 @@
 function TileRpgFramework(){
 	this.frameworkName = "TileRpgFramework";
 	var Trpg = this;
-	alert(window.mobilecheck());
+	this.ismobile = window.mobilecheck();
 	this.cheating = false;
 	this.WorldLoc = function(wx, wy, cx, cy, dim, mx, my){
 		this.wx = wx || 0;
@@ -169,7 +169,7 @@ function TileRpgFramework(){
 		H.w = 1200;
 		H.h = 800;
 		H.container.stretchfit(H);
-		if (window.mobilecheck()){
+		if (Trpg.ismobile){
 			MobilePopulate();
 			return;
 		}
@@ -459,7 +459,6 @@ function TileRpgFramework(){
 			H.settab("Gameplay");
 		}
 	}
-	
 	/*function JoinMultiplayer(){
 		Trpg.socket = io();
 		Trpg.socket.emit("newplayer","zack");
@@ -2777,6 +2776,7 @@ function TileRpgFramework(){
 				}
 			}
 			if (Trpg.socket)	Trpg.socket.emit("sendchanges",Trpg.world.changes);
+			if (Trpg.ismobile)	Trpg.SaveGame();
 		}
 		this.ground = new (function(){
 			function grounditem(item){
