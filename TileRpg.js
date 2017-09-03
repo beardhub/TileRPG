@@ -143,6 +143,7 @@ function TileRpgFramework(){
 				localStorage.setItem("TRPGSaveSlot"/*+this.slot*/,JSON.stringify(Trpg.world.getChanges()));
 			return null;
 		}
+		window.onbeforeunload = Trpg.SaveGame;
 		function MobilePopulate(){
 			function Title(){
 				var t = new UI.DBox();
@@ -457,7 +458,6 @@ function TileRpgFramework(){
 			//window.onbeforeunload = Trpg.SaveGame;
 			H.settab("Gameplay");
 		}
-		window.onbeforeunload = Trpg.SaveGame;
 	}
 	
 	/*function JoinMultiplayer(){
