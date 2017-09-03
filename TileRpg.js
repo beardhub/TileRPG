@@ -2745,7 +2745,7 @@ function TileRpgFramework(){
 					Trpg.world.changes[this.loaded[k].code] = changes;
 				}
 			}
-			Trpg.socket.emit("sendchanges",Trpg.world.changes);
+			if (Trpg.socket)	Trpg.socket.emit("sendchanges",Trpg.world.changes);
 		}
 		this.ground = new (function(){
 			function grounditem(item){
@@ -4669,6 +4669,7 @@ function TileRpgFramework(){
 					Trpg.player.loc.mx =
 					Trpg.player.loc.my = 16;
 					Trpg.board.load(Trpg.player.loc,true);
+					Trpg.board.save();
 				}
 				this.setdest = function(wl){
 					this.destwl = wl.copy();
