@@ -63,7 +63,11 @@ function MouseFramework(){
 		document.body.addEventListener("mouseup",(function(mouse,e){	e.preventDefault();	mouse.upos(e);	that.up(e,mouse);	}).bind(that,mouse));
 		document.body.addEventListener("mousemove",(function(mouse,e){	e.preventDefault();	mouse.upos(e);	that.move(e,mouse);	}).bind(that,mouse));
 		document.body.addEventListener("contextmenu",function(e){		e.preventDefault()});
-		document.body.addEventListener("touchstart",(function(mouse,e){	//e.preventDefault(); 
+		document.body.addEventListener("touchstart",touchHandler); 
+		document.body.addEventListener("touchend",touchHandler); 
+		document.body.addEventListener("touchmove",touchHandler); 
+		document.body.addEventListener("touchcancel",touchHandler); 
+		/*document.body.addEventListener("touchstart",(function(mouse,e){	//e.preventDefault(); 
 			mouse.upos(e.touches[0]);
 			//alert(mouse.x);
 			//console.log(e.touches[0]);
@@ -76,9 +80,33 @@ function MouseFramework(){
 		}).bind(that,mouse));
 		document.body.addEventListener("touchmove",(function(mouse,e){	//e.preventDefault();
 		mouse.upos(e.touches[0]);	that.move(e,mouse);
-		/*that.moved();*/	}).bind(that,mouse));
+		}).bind(that,mouse));*/
 		
-		
+		function touchHandler(event){
+			var touches = event.changedTouches,
+				first = touches[0],
+				type = "";
+			switch(event.type)
+			{
+				case "touchstart": type = "mousedown"; break;
+				case "touchmove":  type = "mousemove"; break;        
+				case "touchend":   type = "mouseup";   break;
+				default:           return;
+			}
+
+			// initMouseEvent(type, canBubble, cancelable, view, clickCount, 
+			//                screenX, screenY, clientX, clientY, ctrlKey, 
+			//                altKey, shiftKey, metaKey, button, relatedTarget);
+
+			var simulatedEvent = document.createEvent("MouseEvent");
+			simulatedEvent.initMouseEvent(type, true, true, window, 1, 
+										  first.screenX, first.screenY, 
+										  first.clientX, first.clientY, false, 
+										  false, false, false, 0/*left*/, null);
+
+			first.target.dispatchEvent(simulatedEvent);
+			event.preventDefault();
+		}
 		/*document.body.addEventListener("click",(function(mouse,e){			e.preventDefault();	mouse.upos(e);	that.click(mouse);	}).bind(that,mouse));
 		document.body.addEventListener("contextmenu",(function(mouse,e){	e.preventDefault();	mouse.upos(e);	that.rclick(mouse);	}).bind(that,mouse));
 		document.body.addEventListener("touchstart",function(e){			e.preventDefault(); 
