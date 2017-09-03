@@ -2776,7 +2776,10 @@ function TileRpgFramework(){
 				}
 			}
 			if (Trpg.socket)	Trpg.socket.emit("sendchanges",Trpg.world.changes);
-			if (Trpg.ismobile)	Trpg.SaveGame();
+			if (Trpg.ismobile){
+				Trpg.SaveGame();
+				alert("saved");
+			}
 		}
 		this.ground = new (function(){
 			function grounditem(item){
