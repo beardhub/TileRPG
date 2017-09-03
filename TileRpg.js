@@ -272,7 +272,7 @@ function TileRpgFramework(){
 			Trpg.socket.on("getplayers",function(players){
 				//return;
 				if (!exists(Trpg.player))	return;
-				Trpg.socket.emit("saveplayerloc",{username:Trpg.player.username,loc:Trpg.player.loc});
+				Trpg.socket.emit("saveplayerloc",{username:Trpg.player.username,loc:Trpg.player.loc,saying:Trpg.player.saying});
 				Trpg.otherplayers = [];
 				for (var p in players)
 					if (p !== "sets" && players[p].username !== Trpg.player.username && exists(players[p].loc))
@@ -679,6 +679,8 @@ function TileRpgFramework(){
 		//console.log(save);
 		p.username = save.username;
 		save.loc && p.loc.load(save.loc);
+		if (save.saying)
+			p.saying = save.saying;
 		//console.log(save.loc);
 		p.update = function(){}
 		return p;
@@ -743,7 +745,7 @@ function TileRpgFramework(){
 				if (K.Keys.D.down || K.Keys.right.down)	dx++;
 				
 				var speed = 170*dlt;
-				//if (!Trpg.textinp.hasfocus)
+				if (!Trpg.board.textinp.hasfocus())
 					this.loc.move(dx*speed,dy*speed);
 				
 				this.attackdelay.update(dlt);
@@ -2857,6 +2859,29 @@ function TileRpgFramework(){
 			this.viewsize = 7;
 			this.container.camera.zoomto(1/(this.viewsize-1)/64*this.container.w);
 			this.container.add(new UI.Follow(this.container.camera,Trpg.player.loc,0,0,32));
+			//this.textinp = new Utils.TextInput("allchars")
+			this.container.add(this.textinp = new Utils.TextInput("allchars"));
+			this.container.add(new Utils.KeyListener("down","Enter",function(){
+				if (!that.textinp.hasfocus())
+					that.textinp.focus();
+				else {
+					var text = that.textinp.gettext()
+					if (Trpg.cheating && text.charAt(0) == "/")
+						command(text.substring(1));
+					else Trpg.player.say(text);
+					that.textinp.clearfocus();
+					that.textinp.clear();
+				}
+			}));
+			this.container.add(new Utils.KeyListener("down","Escape",function(){
+				if (that.textinp.hasfocus())
+					that.textinp.clearfocus();
+			}));
+			this.container.add(new Utils.KeyListener("down","/",function(){
+				if (!that.textinp.hasfocus())
+					that.textinp.focus();
+				that.textinp.keydown({key:"/"});
+			}));
 		}
 		this.keydown = function(k){
 			switch (k.code){
@@ -3203,12 +3228,13 @@ function TileRpgFramework(){
 				g.fillText(Trpg.player.loc.toStr(),this.container.getbounds().l+2,this.container.getbounds().u+10);
 				var b = this.container.getbounds();
 				//if (Trpg.textinp.hasfocus)
-				//	g.fillRect(b.l,b.d,b.r-b.l,-20);
+				if (this.textinp.hasfocus())
+					g.fillRect(b.l,b.d,b.r-b.l,-20);
 				g.fillStyle = "black";
 				g.font = "15px Arial";
 				g.globalAlpha = 1;
-				//if (Trpg.textinp.gettext()!=="")
-				//	Drw.drawCText(g,Trpg.textinp.gettext()+"*",b.l+2,b.d-10,{alignx:"left"})
+				if (this.textinp.gettext()!=="")
+					Drw.drawCText(g,this.textinp.gettext()+"*",b.l+2,b.d-10,{alignx:"left"})
 					//g.fillText(Trpg.textinp.gettext(),b.l+2,b.d-5);
 				//g.translate(this.container.camera.x,this.container.camera.y-6);//dont draw aimer
 				//else g.fillRect(0,-2,Math.sqrt(x*x+y*y),4);

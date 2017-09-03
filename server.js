@@ -81,6 +81,7 @@ io.on('connection', function(socket){
 	});
 	socket.on("saveplayerloc",function(data){
 		players[data.username].loc = data.loc;
+		players[data.username].saying = data.saying;
 	});
 	socket.on("regchanges",function(data){
 		worlddata.changes[data.key] = data.changes;
