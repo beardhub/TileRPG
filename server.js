@@ -69,6 +69,8 @@ io.on('connection', function(socket){
 		socket.disconnect();
 		if (username)
 			players[username].online = false;
+		console.log(username);
+		io.emit("playerleft",username);
 	})
 	socket.on("trylogin", function(data){
 		console.log(data.u);
@@ -78,6 +80,7 @@ io.on('connection', function(socket){
 		//accounts[data.u] = {password:data.p};
 		socket.emit("enterserver",{p:players[data.u],w:worlddata});
 		socket.emit("updateworld",worlddata);
+		io.emit("playerjoined",data.u);
 		players[data.u].online = true;
 	});
 	socket.on("register",function(data){
@@ -90,6 +93,7 @@ io.on('connection', function(socket){
 		players[data.username] = data;
 	});
 	socket.on("saveplayerloc",function(data){
+		if (!players[data.username])	return;
 		players[data.username].loc = data.loc;
 		players[data.username].saying = data.saying;
 	});
@@ -116,13 +120,36 @@ io.on('connection', function(socket){
 				plays.push(players[p]);
 		socket.emit("updateworld",worlddata);
 		socket.emit("getplayers",plays);
+		//socket.emit("updateself",plays);
+	});
+	socket.on("givepriv",function(data){
+		if (players[data.u])
+			for (var i = 0; i < data.p.length; i++)
+				players[data.u].privileges.push(data.p[i]);
+		var plays = [];
+		for (var p in players)
+			if (p !== "sets" && players[p].online)
+				plays.push(players[p]);
+		io.emit("changeme",plays);
+	});
+	socket.on("removepriv",function(data){
+		if (players[data.u])
+			for (var i = 0; i < data.p.length; i++){
+				var ps = players[data.u].privileges;
+				ps.splice(ps.indexOf(data.p[i]),1);
+			}
+				//players[data.u].privileges.splice()(data.p[i]);
+		var plays = [];
+		for (var p in players)
+			if (p !== "sets" && players[p].online)
+				plays.push(players[p]);
+		io.emit("changeme",plays);
 	});
 	
 	
-	
-	socket.on("leave",function(data){
+	/*socket.on("leave",function(data){
 		players[data.playername] = data.playerdata;
-	});
+	});*/
 	socket.on('disconnect', function(){
 		console.log('user disconnected');
 	});

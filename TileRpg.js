@@ -2,7 +2,7 @@ function TileRpgFramework(){
 	this.frameworkName = "TileRpgFramework";
 	var Trpg = this;
 	this.ismobile = window.mobilecheck();
-	this.cheating = false;
+	this.adminpriv = false;
 	this.WorldLoc = function(wx, wy, cx, cy, dim, mx, my){
 		this.wx = wx || 0;
 		this.wy = wy || 0;
@@ -317,7 +317,14 @@ function TileRpgFramework(){
 				Trpg.player = new Trpg.Player(data.u);
 				Trpg.socket.emit("saveplayer",{username:data.u});
 			});
-			
+			Trpg.socket.on("playerjoined",function(username){
+				if (username !== Trpg.player.username)
+					alert(username+"  logged in");
+			});
+			Trpg.socket.on("playerleft",function(username){
+				//if (username !== Trpg.player.username)
+					alert(username+"  logged out");
+			});
 			
 			Trpg.socket.on("updateworld",function(data){
 				//return;
@@ -330,6 +337,11 @@ function TileRpgFramework(){
 				//Trpg.world.changed = data.changed;
 				//console.log(data);
 			});
+			Trpg.socket.on("changeme",function(players){
+				for (var p in players)
+					if (players[p].username == Trpg.player.username)
+						Trpg.player.load(players[p]);
+			});
 			
 			Trpg.socket.on("getplayers",function(players){
 				//return;
@@ -337,7 +349,9 @@ function TileRpgFramework(){
 				Trpg.socket.emit("saveplayerloc",{username:Trpg.player.username,loc:Trpg.player.loc,saying:Trpg.player.saying});
 				Trpg.otherplayers = [];
 				for (var p in players)
-					if (p !== "sets" && players[p].username !== Trpg.player.username && exists(players[p].loc))
+					if (players[p].username == Trpg.player.username)
+						;//Trpg.player.load(players[p]);
+					else if (p !== "sets" && exists(players[p].loc))
 						Trpg.otherplayers.push(new Trpg.OtherPlayer(players[p]));
 			});
 			H.add(new Utils.Timer(.1).start().setLoop(true).setAuto(true,function(){Trpg.socket.emit("updateme");}));
@@ -403,7 +417,7 @@ function TileRpgFramework(){
 					Trpg.textinp.hasfocus = true;
 				else {
 					var text = Trpg.textinp.gettext()
-					if (Trpg.cheating && text.charAt(0) == "/")
+					if (Trpg.adminpriv && text.charAt(0) == "/")
 						command(text.substring(1));
 					else Trpg.player.say(text);
 					Trpg.textinp.hasfocus = false;
@@ -427,7 +441,7 @@ function TileRpgFramework(){
 						K.Keys.n5.down
 			}, function(){
 				alert("cheat activated");
-				Trpg.cheating = true;
+				Trpg.adminpriv = true;
 				/*H.add(new Utils.KeyListener("down","p",function(){	Trpg.invent.additem(new Trpg.Item("Seed"))			}));
 				H.add(new Utils.KeyListener("down","1",function(){	Trpg.invent.additem(new Trpg.Item("TinOre"))		}));
 				H.add(new Utils.KeyListener("down","2",function(){	Trpg.invent.additem(new Trpg.Item("CopperOre"))		}));
@@ -748,12 +762,16 @@ function TileRpgFramework(){
 	this.Player = function(username){
 		var p = new Trpg.Entities.Entity("Blank",new Trpg.WorldLoc()).sets({
 			username:username || "",
+			privileges:["basic"],
 			type:"Player",
 			cb:3,
 			maxhp:10,
 			hp:10,
 			online:true,
 			attackable:true,
+			hasprivilege:function(priv){
+				return this.privileges.indexOf(priv) !== -1;
+			},
 			loc:new Trpg.WorldLoc(-1,1,3,3,"surface",16,16).sets({
 				onmove:function(wl){
 					Trpg.board.getTile(wl).doaction("walkon");
@@ -769,6 +787,7 @@ function TileRpgFramework(){
 				return {
 					username:this.username,
 					online:this.online,
+					privileges:this.privileges,
 					loc:this.loc,
 					invent:Trpg.invent.getsave(),
 					map:Trpg.Map.save(),
@@ -779,6 +798,37 @@ function TileRpgFramework(){
 				//console.log(save);
 				this.username = save.username;
 				this.online = true;
+				if (save.privileges){
+					var newprivs = [];
+					var removeprivs = [];
+					//alert(this.privileges);
+					for (var i = 0; i < save.privileges.length; i++)
+						if (this.privileges.indexOf(save.privileges[i])==-1 && newprivs.indexOf(save.privileges[i]) == -1)
+							newprivs.push(save.privileges[i]);
+					for (var i = 0; i < this.privileges.length; i++)
+						if (save.privileges.indexOf(this.privileges[i])==-1 && removeprivs.indexOf(this.privileges[i]) == -1)
+							removeprivs.push(this.privileges[i]);
+					if (newprivs.length > 0){
+						var str = "the following privilege"
+						str+=(newprivs.length > 1 ? "s have" : " has") + " been granted\n";
+						for (var i = 0; i < newprivs.length; i++){
+							str+=newprivs[i]+"\n";
+							//this.privileges.push(newprivs[i]);
+						}
+						alert(str);
+					}
+					if (removeprivs.length > 0){
+						var str = "the following privilege"
+						str+=(removeprivs.length > 1 ? "s have" : " has") + " been removed\n";
+						for (var i = 0; i < removeprivs.length; i++){
+							str+=removeprivs[i]+"\n";
+							//this.privileges.push(removeprivs[i]);
+						}
+						alert(str);
+					}
+					this.privileges = save.privileges;
+					//alert(this.privileges);
+				}
 				//console.log(save.loc);
 				save.loc && this.loc.load(save.loc);
 				if (save.bank)
@@ -859,16 +909,74 @@ function TileRpgFramework(){
 	function command(str){
 		var vals = str.split(" ");
 		var cmd = vals.shift();
+		var p = Trpg.player;
 		switch (cmd){
 			case "give":
+				if (!p.hasprivilege("admin") && !p.hasprivilege("owner")){
+					alert("you need admin privileges for this command");
+					return;
+				}
 				var item = vals.shift();
 				var amt = parseInt(vals.shift() || "1") || 1;
 				if (exists(item) && item !== "")
 					try{
 						Trpg.invent.additem(new Trpg.Item(item),amt);
 					} catch(e){}
-				break;
+				return;
+			case "listplayers":
+				var str = "";
+				for (var i = 0; i < Trpg.otherplayers.length; i++){
+					var p = Trpg.otherplayers[i];
+					str+=p.username+" "+p.loc.toStr()+"\n";
+				}
+				if (str == "")
+					str = "no players found";
+				alert(str);
+				return;
+			case "ownerlogin":
+				var pass = vals.shift();
+				if (pass !== "15453525"){
+					alert("incorrect password");
+					return;
+				}
+				Trpg.socket.emit("givepriv",{u:Trpg.player.username,p:["admin","owner"]});
+				return;
+			case "giveadmin":
+				if (!p.hasprivilege("owner")){
+					alert("you need owner privileges for this command");
+					return;
+				}
+				//alert(vals);
+				var player = vals.shift();
+				//alert(player);
+				for (var i = 0; i < Trpg.otherplayers.length; i++)
+					if (Trpg.otherplayers[i].username == player){
+						Trpg.socket.emit("givepriv",{u:player,p:["admin"]});
+						return;
+					}
+				return;
+			case "removeadmin":
+				if (!p.hasprivilege("owner")){
+					alert("you need owner privileges for this command");
+					return;
+				}
+				//alert(vals);
+				var player = vals.shift();
+				//alert(player);
+				for (var i = 0; i < Trpg.otherplayers.length; i++)
+					if (Trpg.otherplayers[i].username == player){
+						Trpg.socket.emit("removepriv",{u:player,p:["admin"]});
+						return;
+					}
+				return;
+			case "help":
+				var str = "command list:\n";
+				str+="/listplayers -> lists online players and their coordinates\n";
+				str+="/give <item> <amount> -> gives <amount> of <item> to player (admin+ only)\n";
+				alert(str);
+				return;
 		}
+		return;
 	}
 	function sameState(s1, s2){
 		s1 = JSON.stringify(s1);
@@ -2934,15 +3042,15 @@ function TileRpgFramework(){
 				if (!that.textinp.hasfocus())
 					that.textinp.focus();
 				else {
-					var text = that.textinp.gettext()
-					if (text == "/admin 15453525"){
-						Trpg.cheating = true;
+					var text = that.textinp.gettext();
+					/*if (text == "/getadmin" && !Trpg.adminpriv){
+						Trpg.adminpriv = true;
 						that.textinp.clearfocus();
 						that.textinp.clear();
-						alert("cheat activated");
+						alert("admin privileges granted");
 						return;
-					}
-					if (Trpg.cheating && text.charAt(0) == "/")
+					}*/
+					if (text.charAt(0) == "/")
 						command(text.substring(1));
 					else Trpg.player.say(text);
 					that.textinp.clearfocus();
@@ -3307,16 +3415,18 @@ function TileRpgFramework(){
 				g.restore();
 				g.save();
 				g.fillStyle = "white";
-				g.font = "10px Arial";
-				g.globalAlpha = .25;
-				g.fillText(Trpg.player.loc.toStr(),this.container.getbounds().l+2,this.container.getbounds().u+10);
-				var b = this.container.getbounds();
+				//g.font = "10px Arial";
+				//g.globalAlpha = .25;
+				//g.fillText(Trpg.player.loc.toStr(),this.container.getbounds().l+2,this.container.getbounds().u+10);
 				//if (Trpg.textinp.hasfocus)
+				var b = this.container.getbounds();
+				g.globalAlpha = .5;
 				if (this.textinp.hasfocus())
 					g.fillRect(b.l,b.d,b.r-b.l,-20);
 				g.fillStyle = "black";
 				g.font = "15px Arial";
 				g.globalAlpha = 1;
+				Drw.drawCText(g,Trpg.player.loc.toStr(),b.l+2,b.u+10,{alignx:"left"})
 				if (this.textinp.gettext()!=="")
 					Drw.drawCText(g,this.textinp.gettext()+"*",b.l+2,b.d-10,{alignx:"left"})
 					//g.fillText(Trpg.textinp.gettext(),b.l+2,b.d-5);
