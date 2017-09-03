@@ -133,6 +133,13 @@ function TileRpgFramework(){
 		}
 	}
 	this.Populate = function(H){
+		window.onresize = function(){
+			var UU = H.container;
+			M.canvas.width = UU.w = window.innerWidth;
+			M.canvas.height = UU.h = window.innerHeight;
+			H.container.stretchfit(H);
+			console.log("resize");
+		}
 		Trpg.SaveGame = function(force){
 			if (Trpg.socket){
 				Trpg.socket.emit("saveplayer",Trpg.player.save());
