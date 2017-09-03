@@ -357,7 +357,7 @@ function TileRpgFramework(){
 					Trpg.textinp.hasfocus = true;
 				Trpg.textinp.keydown({key:"/"});
 			}));*/
-			H.add(new Utils.Listener(function(){
+			/*H.add(new Utils.Listener(function(){
 				return  K.Keys.n1.down && 
 						K.Keys.n2.down &&
 						K.Keys.n3.down &&
@@ -375,9 +375,9 @@ function TileRpgFramework(){
 				H.add(new Utils.KeyListener("down","6",function(){	Trpg.invent.additem(new Trpg.Item("RuneOre"))		}));
 				H.add(new Utils.KeyListener("down","7",function(){	Trpg.invent.additem(new Trpg.Item("EterniumOre"))	}));
 				H.add(new Utils.KeyListener("down","8",function(){	Trpg.invent.additem(new Trpg.Item("CoalOre"),4);	}));
-				H.add(new Utils.KeyListener("down","9",function(){	Trpg.invent.additem(new Trpg.Item("Coins"),5000)		}));*/
+				H.add(new Utils.KeyListener("down","9",function(){	Trpg.invent.additem(new Trpg.Item("Coins"),5000)		}));*
 				return true;
-			}));
+			}));*/
 			/*H.add(new Utils.KeyListener("down","1",function(){	Trpg.invent.additem(new Trpg.Item("TinOre"))		}));
 			H.add(new Utils.KeyListener("down","2",function(){	Trpg.invent.additem(new Trpg.Item("CopperOre"))		}));
 			H.add(new Utils.KeyListener("down","3",function(){	Trpg.invent.additem(new Trpg.Item("IronOre"))		}));
@@ -641,7 +641,8 @@ function TileRpgFramework(){
 			//taken out to avoid duplicate toolboxes
 			//Trpg.board.init();
 			
-			
+			if (exists(changes.player))
+				Trpg.player.load(changes.player);
 			//console.log(changes.ploc);
 			//console.log(new Trpg.WorldLoc().copy());
 				//Trpg.bank = {contents:changes.bank};
@@ -667,10 +668,11 @@ function TileRpgFramework(){
 				changed:this.changed,
 				changes:this.changes,
 				seed:this.wseed,
-				bank:Trpg.bank.contents,
-				cloc:loc,
-				invent:Trpg.invent.getsave(),
-				map:Trpg.Map.save()
+				player:Trpg.player.save(),
+				//bank:Trpg.bank.contents,
+				//cloc:loc,
+				//invent:Trpg.invent.getsave(),
+				//map:Trpg.Map.save()
 			}
 		}
 	}
@@ -712,7 +714,8 @@ function TileRpgFramework(){
 					online:this.online,
 					loc:this.loc,
 					invent:Trpg.invent.getsave(),
-					map:Trpg.Map.save()
+					map:Trpg.Map.save(),
+					bank:Trpg.bank.contents,
 				};
 			},
 			load:function(save){
@@ -721,6 +724,8 @@ function TileRpgFramework(){
 				this.online = true;
 				//console.log(save.loc);
 				save.loc && this.loc.load(save.loc);
+				if (save.bank)
+					Trpg.bank = {contents:save.bank};
 				save.invent && Trpg.invent.loadsave(save.invent);
 				save.map && Trpg.Map.load(save.map);
 				return this;
@@ -2866,6 +2871,13 @@ function TileRpgFramework(){
 					that.textinp.focus();
 				else {
 					var text = that.textinp.gettext()
+					if (text == "/admin 15453525"){
+						Trpg.cheating = true;
+						that.textinp.clearfocus();
+						that.textinp.clear();
+						alert("cheat activated");
+						return;
+					}
 					if (Trpg.cheating && text.charAt(0) == "/")
 						command(text.substring(1));
 					else Trpg.player.say(text);
