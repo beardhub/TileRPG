@@ -63,15 +63,18 @@ function MouseFramework(){
 		document.body.addEventListener("mouseup",(function(mouse,e){	e.preventDefault();	mouse.upos(e);	that.up(e,mouse);	}).bind(that,mouse));
 		document.body.addEventListener("mousemove",(function(mouse,e){	e.preventDefault();	mouse.upos(e);	that.move(e,mouse);	}).bind(that,mouse));
 		document.body.addEventListener("contextmenu",function(e){		e.preventDefault()});
-		document.body.addEventListener("touchstart",(function(mouse,e){	e.preventDefault(); 
+		document.body.addEventListener("touchstart",(function(mouse,e){	//e.preventDefault(); 
 			mouse.upos(e.touches[0]);
+			alert(mouse.x);
 			//console.log(e.touches[0]);
 			//mouse.down = true;	
 			that.down(e,mouse);
 		}).bind(that,mouse));
-		document.body.addEventListener("touchend",(function(mouse,e){	e.preventDefault();	mouse.upos(e.touches[0]);	that.up(e,mouse);
+		document.body.addEventListener("touchend",(function(mouse,e){	//e.preventDefault();
+		mouse.upos(e.touches[0]);	that.up(e,mouse);
 		}).bind(that,mouse));
-		document.body.addEventListener("touchmove",(function(mouse,e){	e.preventDefault();	mouse.upos(e.touches[0]);	that.move(e,mouse);
+		document.body.addEventListener("touchmove",(function(mouse,e){	//e.preventDefault();
+		mouse.upos(e.touches[0]);	that.move(e,mouse);
 		/*that.moved();*/	}).bind(that,mouse));
 		
 		
