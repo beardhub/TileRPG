@@ -344,7 +344,9 @@ function TileRpgFramework(){
 					if (players[p].username == Trpg.player.username)
 						Trpg.player.load(players[p]);
 			});
-			
+			/*Trpg.socket.on("pingactive",function(){
+				Trpg.socket.emit("confirmactive",Trpg.player.username);
+			});*/
 			Trpg.socket.on("getplayers",function(players){
 				//return;
 				if (!exists(Trpg.player))	return;
@@ -1692,21 +1694,28 @@ function TileRpgFramework(){
 			this.r = 34;
 			this.s = 6;
 			this.container.camera.centerZero();
+			var c = this.container;
+			this.defaultdims = {
+				x:c.x,
+				y:c.y,
+				w:c.w,
+				h:c.h
+			}
 			//this.invisible = true;
 		}
 		this.mousedown = function(e,m){
 			if (e.button !== 0)	return;
 			if (this.container.mouseonbox(m)){
 				//this.container.fullscreen = !this.container.fullscreen;
-				
 			//Trpg.board.setTile(new Trpg.Tile("Chest"),new Trpg.WorldLoc(-1,1,5,5));return;
 				if (this.container.fullscreen){
 					this.r = 34;
 					this.s = 6;
-					this.container.x = 800;
-					this.container.y = 0;
-					this.container.w = 400;
-					this.container.h = 300;
+					var d = this.defaultdims;
+					this.container.x = d.x;
+					this.container.y = d.y;
+					this.container.w = d.w;
+					this.container.h = d.h;
 					this.container.camera.reset();
 					this.container.camera.centerZero();
 					Trpg.Home.get("Gameplay.Menus").invisible = false;

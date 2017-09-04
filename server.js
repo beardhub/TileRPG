@@ -23,6 +23,11 @@ app.get('/', function(req, res){
 /*io.configure(function () {
 	io.set('transports', ['flashsocket', 'xhr-polling']);
 });*/
+setInterval(function(){
+	var clients = findClientsSocket();
+	
+},1000);
+
 function sendupdates(){
 	//var clients = findClientsSocket();
 	//var clients = Object.keys(io.sockets.sockets);
@@ -113,7 +118,15 @@ io.on('connection', function(socket){
 		worlddata.ups++;
 		//sendupdates();
 	});
-	socket.on("updateme",function(data){
+	/*socket.on("confirmactive",function(username){
+		players[username].online = true;
+	});*/
+	socket.on("updateme",function(){
+		/*for (var p in players)
+			if (p !== "sets")// && players[p].online)
+				players[p].online = false;
+			//plays.push(players[p]);
+		io.emit("pingactive");*/
 		var plays = [];
 		for (var p in players)
 			if (p !== "sets" && players[p].online)
