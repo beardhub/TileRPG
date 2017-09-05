@@ -103,13 +103,17 @@ io.on('connection', function(socket){
 		players[data.username].saying = data.saying;
 	});
 	socket.on("regchanges",function(data){
-		worlddata.changes[data.key] = data.changes;
+		for (var i = 0; i < data.length; i++)
+			worlddata.changes[data[i].key] = data[i].changes;
+		//data.unshift(worlddata.ups)
+		io.emit("updatechunks",data)
 		worlddata.ups++;
 		//console.log(worlddata.changes[data.key]);
 		//if (worlddata.changed.indexOf(data.key) == -1)
 		//	worlddata.changed.push(data.key);
 	});
 	socket.on("sendchanges",function(data){
+		//			not used
 		/*if (
 		JSON.stringify(data) == 
 		JSON.stringify(worlddata.changes)
@@ -127,11 +131,14 @@ io.on('connection', function(socket){
 				players[p].online = false;
 			//plays.push(players[p]);
 		io.emit("pingactive");*/
+		
+		
+		
 		var plays = [];
 		for (var p in players)
 			if (p !== "sets" && players[p].online)
 				plays.push(players[p]);
-		socket.emit("updateworld",worlddata);
+		//socket.emit("updateworld",worlddata);
 		socket.emit("getplayers",plays);
 		//socket.emit("updateself",plays);
 	});
@@ -139,11 +146,13 @@ io.on('connection', function(socket){
 		if (players[data.u])
 			for (var i = 0; i < data.p.length; i++)
 				players[data.u].privileges.push(data.p[i]);
-		var plays = [];
+		/*var plays = [];
 		for (var p in players)
 			if (p !== "sets" && players[p].online)
-				plays.push(players[p]);
-		io.emit("changeme",plays);
+				//plays.push(players[p]);
+				plays.push({username:players[p].username,privileges:players[p].privileges});*/
+		//console.log(players[data.u]);
+		io.emit("changeme",{username:data.u,privileges:players[data.u].privileges});
 	});
 	socket.on("removepriv",function(data){
 		if (players[data.u])
@@ -151,12 +160,13 @@ io.on('connection', function(socket){
 				var ps = players[data.u].privileges;
 				ps.splice(ps.indexOf(data.p[i]),1);
 			}
+		io.emit("changeme",{username:data.u,privileges:players[data.u].privileges});
 				//players[data.u].privileges.splice()(data.p[i]);
-		var plays = [];
+		/*var plays = [];
 		for (var p in players)
 			if (p !== "sets" && players[p].online)
 				plays.push(players[p]);
-		io.emit("changeme",plays);
+		io.emit("changeme",plays);*/
 	});
 	/*socket.on("removeplayer",function(username){
 		if (players[username])

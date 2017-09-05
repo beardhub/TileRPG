@@ -296,7 +296,7 @@ function TileRpgFramework(){
 			m.add(new UI.Button(500,700,200,50).sets({color:"darkgrey",text:"Back",key:"m",onclick:function(){
 				Trpg.socket.emit("gooffline");H.settab("TitleMenu");
 			}}));
-			
+			//{login stuff
 			Trpg.socket.on("failedlogin", function(){
 				alert("Incorrect username or password");
 			});
@@ -319,6 +319,8 @@ function TileRpgFramework(){
 				Trpg.player = new Trpg.Player(data.u);
 				Trpg.socket.emit("saveplayer",{username:data.u});
 			});
+			//}
+			
 			Trpg.socket.on("playerjoined",function(username){
 				if (username !== Trpg.player.username)
 					alert(username+"  logged in");
@@ -328,6 +330,24 @@ function TileRpgFramework(){
 					alert(username+"  logged out");
 			});
 			
+			Trpg.socket.on("updatechunks",function(data){
+				if (!exists(Trpg.world)) return;// || data[0] <= Trpg.world.ups)	return;
+				var needload = false;
+				//console.log(data);
+				//console.log("uchnks");
+				for (var i = 0; i < data.length; i++){
+					if (Trpg.board.chunkloaded(data[i].key))
+						needload = true;
+					if (Trpg.world.changed.indexOf(data[i].key) == -1)
+						Trpg.world.changed.push(data[i].key);
+					Trpg.world.changes[data[i].key] = data[i].changes;
+					//console.log(Trpg.world.changes[data[i].key]);
+				}
+				//console.log(Trpg.world.changed);
+				//console.log(needload)
+				//if (needload)
+					Trpg.board.load(Trpg.player.loc,true);
+			});
 			Trpg.socket.on("updateworld",function(data){
 				//return;
 				//if (!exists(Trpg.world) || (JSON.stringify(data.changes) == JSON.stringify(Trpg.world.changes))) return;// && Trpg.world.changed == data.changed))return;
@@ -339,10 +359,15 @@ function TileRpgFramework(){
 				//Trpg.world.changed = data.changed;
 				//console.log(data);
 			});
-			Trpg.socket.on("changeme",function(players){
-				for (var p in players)
+			Trpg.socket.on("changeme",function(player){
+				console.log(player);
+				console.log(Trpg.player);
+				if (player.username == Trpg.player.username)
+					Trpg.player.load(player);
+				/*for (var p in players)
 					if (players[p].username == Trpg.player.username)
 						Trpg.player.load(players[p]);
+				console.log(Trpg.player);*/
 			});
 			/*Trpg.socket.on("pingactive",function(){
 				Trpg.socket.emit("confirmactive",Trpg.player.username);
@@ -752,15 +777,30 @@ function TileRpgFramework(){
 		}
 	}
 	this.OtherPlayer = function(save){
-		var p = new Trpg.Player();
-		//console.log(save);
-		p.username = save.username;
-		save.loc && p.loc.load(save.loc);
-		if (save.saying)
-			p.saying = save.saying;
-		//console.log(save.loc);
-		p.update = function(){}
-		return p;
+		return new Trpg.Entities.Entity("Blank",new Trpg.WorldLoc()).sets({
+			username:save.username || "",
+			privileges:save.privileges||["basic"],
+			type:"Player",
+			cb:3,
+			maxhp:10,
+			hp:10,
+			online:true,
+			attackable:true,
+			loc:new Trpg.WorldLoc().load(save.loc),
+			saying:save.saying || "",
+			update:function(){},
+			inrender:function(g){
+				g.drawImage(Ast.i("playerS"),0,0);
+			},
+			fillmenu:function(menu){
+				var priv = ""
+				if (this.privileges.indexOf("owner")!==-1)
+					priv = " (Owner)";
+				else if (this.privileges.indexOf("admin")!==-1)
+					priv = " (Admin)";
+				menu.additem(function(){return "close"},this.username+priv);
+			},
+		});
 	}
 	this.otherplayers = [];
 	this.Player = function(username){
@@ -800,7 +840,9 @@ function TileRpgFramework(){
 			},
 			load:function(save){
 				//console.log(save);
-				this.username = save.username;
+				console.log(save);
+				if (save.username)
+					this.username = save.username;
 				this.online = true;
 				if (save.privileges){
 					var newprivs = [];
@@ -849,7 +891,12 @@ function TileRpgFramework(){
 				g.drawImage(Ast.i("playerS"),0,0);
 			},
 			fillmenu:function(menu){
-				menu.additem(function(){return "close"},this.username);
+				var priv = ""
+				if (this.privileges.indexOf("owner")!==-1)
+					priv = " (Owner)";
+				else if (this.privileges.indexOf("admin")!==-1)
+					priv = " (Admin)";
+				menu.additem(function(){return "close"},this.username+priv);
 			},
 			update:function(dlt){
 				var dx = 0;
@@ -2896,6 +2943,11 @@ function TileRpgFramework(){
 		return box;//}
 	}*/
 	this.Board = function(){
+		this.chunkloaded = function(code){
+			for (var i = 0; i < this.loaded.length; i++)
+				if (this.loaded[i].code == code)
+					return true;
+		}
 		this.load = function(wl,force){
 			if (!exists(wl)) wl = new Trpg.WorldLoc(0,0,3,3);
 			this.rcenter = new Trpg.WorldLoc(wl.wx,wl.wy,3,3,wl.dim);
@@ -2918,12 +2970,10 @@ function TileRpgFramework(){
 					//if (Trpg.Structures.hasstruct(newchunk.wl))
 					//	Trpg.Structures.fillchunk(newchunk.wl);
 				}
-			//this.save();
 			for (var k = 0; k < this.loaded.length; k++)
 				if (!this.loaded[k].wl.indist(ccenter,8)){
 					var changes = this.loaded[k].getChanges();
 					if (changes!="none"){
-						//Trpg.socket.emit("regchanges",{key:this.loaded[k].code,changes:changes});
 						Trpg.world.changes[this.loaded[k].code] = changes;
 					}
 					this.loaded.splice(k,1);
@@ -2932,14 +2982,19 @@ function TileRpgFramework(){
 			//Trpg.Structures.checkcenters(wl);
 		}
 		this.save = function(){
+			var changelist = [];
 			for (var k = 0; k < this.loaded.length; k++){
 				var changes = this.loaded[k].getChanges();
 				if (changes!=="none"){
+					//if (Trpg.socket)
+					changelist.push({key:this.loaded[k].code,changes:changes});
 					//Trpg.socket.emit("regchanges",{key:this.loaded[k].code,changes:changes});
 					Trpg.world.changes[this.loaded[k].code] = changes;
 				}
 			}
-			if (Trpg.socket)	Trpg.socket.emit("sendchanges",Trpg.world.changes);
+			console.log(changelist);
+			//if (Trpg.socket)	Trpg.socket.emit("sendchanges",Trpg.world.changes);
+			if (Trpg.socket)	Trpg.socket.emit("regchanges",changelist);
 			if (Trpg.ismobile)	Trpg.SaveGame(true);
 				//&& Trpg.world.getChanges(true)!="none")
 				//localStorage.setItem("TRPGSaveSlot",JSON.stringify(Trpg.world.getChanges(true)));
@@ -4211,6 +4266,7 @@ function TileRpgFramework(){
 					this.filled.push(wl.toStr());
 					if (this.filled.length >= this.contchunks.length) Trpg.Structures.structs[this.cwl.toStr()]
 						.splice(Trpg.Structures.structs[this.cwl.toStr()].indexOf(this),1);
+					//console.log(this);
 					
 					var dx = this.tlc.dx(wl);
 					var dy = this.tlc.dy(wl);
@@ -4531,19 +4587,22 @@ function TileRpgFramework(){
 				this.centers.loadedstr.push(wl.toStr());
 			}
 			else return;
+			console.log("triggering"+wl.toStr());
 //			if (this.centers.queued.indexOf(wl) !== -1)
 				this.centers.queuedstr.splice(this.centers.queuedstr.indexOf(wl.toStr()),1);
 			//generate structures and init surrounding centers
+			console.log("trigger"+wl.toStr());
 			Math.seedrandom(Trpg.world.wseed+wl.toStr());
 			this.structs[wl.toStr()] = [];
-			this.structs[wl.toStr()].push(Structure("Brumlidge",wl,new Trpg.WorldLoc(-2,-1)));
-			//if (wl.dist(new Trpg.WorldLoc())==0)
+			if (wl.dist(new Trpg.WorldLoc())==0)
+				this.structs[wl.toStr()].push(Structure("Brumlidge",wl,new Trpg.WorldLoc(-2,-1)));
 			//	this.structs[wl.toStr()].push(Structure("Brumlidge",wl));
-			for (var i = 0; i < Math.random()*5+5; i++){
+			//alert("blah"+wl.toStr());
+			for (var i = 0; i < Math.random()*5+55; i++){
 				var s =  Structure("Forge",wl); //new 
 				if (s !== -1)	this.structs[wl.toStr()].push(s);
 			}
-			for (var i = 0; i < Math.random()*5+5; i++){
+			for (var i = 0; i < Math.random()*5+55; i++){
 				var s =  Structure("Bank",wl); //new 
 				if (s !== -1)	this.structs[wl.toStr()].push(s);
 			}
@@ -4567,6 +4626,7 @@ function TileRpgFramework(){
 		this.checkchunk = function(wl){
 			var center = this.getcenter(wl);
 			if (center == -1 || !exists(this.structs[center.toStr()]))	return;
+			console.log("checking"+center.toStr());
 			for (var i = 0; i < this.structs[center.toStr()].length; i++)
 				if (this.structs[center.toStr()][i].inchunk(wl.copy().tochunk().toStr()))
 					this.structs[center.toStr()][i].fill(wl.copy());
