@@ -291,7 +291,9 @@ function TileRpgFramework(){
 				Trpg.socket.emit("trylogin",{u:uentry.gettext(),p:pentry.gettext(true)});
 			}}));
 			m.add(new UI.Button(500,600,200,50).sets({color:"yellow",text:"New Account",key:"m",onclick:function(){
-				Trpg.socket.emit("register",{u:uentry.gettext(),p:pentry.gettext(true)});
+				if (uentr.gettext() == "")
+					alert("Username required (password optional)");
+				else Trpg.socket.emit("register",{u:uentry.gettext(),p:pentry.gettext(true)});
 			}}));
 			m.add(new UI.Button(500,700,200,50).sets({color:"darkgrey",text:"Back",key:"m",onclick:function(){
 				Trpg.socket.emit("gooffline");H.settab("TitleMenu");
