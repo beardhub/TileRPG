@@ -842,7 +842,7 @@ function TileRpgFramework(){
 			},
 			load:function(save){
 				//console.log(save);
-				console.log(save);
+				//console.log(save);
 				if (save.username)
 					this.username = save.username;
 				this.online = true;
@@ -4264,11 +4264,13 @@ function TileRpgFramework(){
 					return this;
 				}
 				this.fill = function(wl){
+					//console.log("try fill");
 					if (this.filled.indexOf(wl.toStr()) !== -1)	return;
 					this.filled.push(wl.toStr());
 					if (this.filled.length >= this.contchunks.length) Trpg.Structures.structs[this.cwl.toStr()]
 						.splice(Trpg.Structures.structs[this.cwl.toStr()].indexOf(this),1);
 					//console.log(this);
+					//console.log("filing");
 					
 					var dx = this.tlc.dx(wl);
 					var dy = this.tlc.dy(wl);
@@ -4593,18 +4595,18 @@ function TileRpgFramework(){
 //			if (this.centers.queued.indexOf(wl) !== -1)
 				this.centers.queuedstr.splice(this.centers.queuedstr.indexOf(wl.toStr()),1);
 			//generate structures and init surrounding centers
-			console.log("trigger"+wl.toStr());
+			//console.log("trigger"+wl.toStr());
 			Math.seedrandom(Trpg.world.wseed+wl.toStr());
 			this.structs[wl.toStr()] = [];
 			if (wl.dist(new Trpg.WorldLoc())==0)
 				this.structs[wl.toStr()].push(Structure("Brumlidge",wl,new Trpg.WorldLoc(-2,-1)));
-			//	this.structs[wl.toStr()].push(Structure("Brumlidge",wl));
+			else this.structs[wl.toStr()].push(Structure("Brumlidge",wl));
 			//alert("blah"+wl.toStr());
-			for (var i = 0; i < Math.random()*5+55; i++){
+			for (var i = 0; i < Math.random()*5+5; i++){
 				var s =  Structure("Forge",wl); //new 
 				if (s !== -1)	this.structs[wl.toStr()].push(s);
 			}
-			for (var i = 0; i < Math.random()*5+55; i++){
+			for (var i = 0; i < Math.random()*5+5; i++){
 				var s =  Structure("Bank",wl); //new 
 				if (s !== -1)	this.structs[wl.toStr()].push(s);
 			}
@@ -4620,15 +4622,17 @@ function TileRpgFramework(){
 					//break;
 				}
 			for (var i = 0; i < this.centers.loaded.length; i++)
-				if (wl.indist(this.centers.loaded[i],8*(sectorsize-1)/2),true)
+				if (wl.indist(this.centers.loaded[i],8*(sectorsize-1)/2,true))
 				//if (wl.dist(this.centers.loaded[i]) <= 8*(sectorsize-1)/2)
 					return this.centers.loaded[i];
 			return -1;
 		}
 		this.checkchunk = function(wl){
+			//console.log("checking chunk"+wl.toStr());
 			var center = this.getcenter(wl);
 			if (center == -1 || !exists(this.structs[center.toStr()]))	return;
-			console.log("checking"+center.toStr());
+			//console.log("checking"+center.toStr());
+			//console.log(this.structs[center.toStr()]);
 			for (var i = 0; i < this.structs[center.toStr()].length; i++)
 				if (this.structs[center.toStr()][i].inchunk(wl.copy().tochunk().toStr()))
 					this.structs[center.toStr()][i].fill(wl.copy());
