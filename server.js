@@ -75,7 +75,7 @@ io.on('connection', function(socket){
 		if (username)
 			players[username].online = false;
 		console.log(username);
-		io.emit("playerleft",username);
+		io.emit("playerleft",players[username]);
 	})
 	socket.on("trylogin", function(data){
 		console.log(data.u);
@@ -83,9 +83,11 @@ io.on('connection', function(socket){
 		if (typeof accounts[data.u] == "undefined" || accounts[data.u].password !== data.p)
 		return socket.emit("failedlogin");
 		//accounts[data.u] = {password:data.p};
+		if (players[data.u].online)
+		return socket.emit("alreadyonline");
 		socket.emit("enterserver",{p:players[data.u],w:worlddata});
 		socket.emit("updateworld",worlddata);
-		io.emit("playerjoined",data.u);
+		io.emit("playerjoined",players[data.u]);
 		players[data.u].online = true;
 	});
 	socket.on("register",function(data){
@@ -125,6 +127,9 @@ io.on('connection', function(socket){
 	/*socket.on("confirmactive",function(username){
 		players[username].online = true;
 	});*/
+	socket.on("playerspeak",function(str){
+		socket.broadcast.emit("playerspeak",str);
+	});
 	socket.on("updateme",function(){
 		/*for (var p in players)
 			if (p !== "sets")// && players[p].online)
