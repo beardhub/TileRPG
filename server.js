@@ -47,7 +47,13 @@ function sendupdates(){
 		clients[i].emit("getplayers",plays);
 	}*/
 }
-//setInterval(sendupdates,100);
+setInterval(function(){
+	for (var a in accounts)
+		if (a !== "sets" && accounts[a].online)
+			if (accounts[a].inactivity < 60*1)
+				accounts[a].inactivity++;
+			else accounts[a].online = false;
+},1000);
 function findClientsSocket(roomId, namespace) {
     var res = []
     // the default namespace is "/"
@@ -73,27 +79,27 @@ io.on('connection', function(socket){
 	socket.on("gooffline",function(username){
 		socket.disconnect();
 		if (username)
-			players[username].online = false;
+			accounts[username].online = false;
 		console.log(username);
 		io.emit("playerleft",players[username]);
 	})
 	socket.on("trylogin", function(data){
-		console.log(data.u);
-		console.log(data.p);
+		console.log("username: "+data.u);
+		console.log("password: "+data.p);
 		if (typeof accounts[data.u] == "undefined" || accounts[data.u].password !== data.p)
 		return socket.emit("failedlogin");
 		//accounts[data.u] = {password:data.p};
-		if (players[data.u].online)
+		if (accounts[data.u].online)
 		return socket.emit("alreadyonline");
 		socket.emit("enterserver",{p:players[data.u],w:worlddata});
 		socket.emit("updateworld",worlddata);
 		io.emit("playerjoined",players[data.u]);
-		players[data.u].online = true;
+		accounts[data.u].online = true;
 	});
 	socket.on("register",function(data){
 		if (typeof accounts[data.u] !== "undefined")
 		return socket.emit("usertaken");
-		accounts[data.u] = {password:data.p};
+		accounts[data.u] = {password:data.p,online:false,inactivity:0};
 		socket.emit("accountregistered",data);
 	});
 	socket.on("saveplayer",function(data){
@@ -102,7 +108,7 @@ io.on('connection', function(socket){
 	socket.on("saveplayerloc",function(data){
 		if (!players[data.username])	return;
 		players[data.username].loc = data.loc;
-		players[data.username].saying = data.saying;
+		//players[data.username].saying = data.saying;
 	});
 	socket.on("regchanges",function(data){
 		for (var i = 0; i < data.length; i++)
@@ -130,18 +136,19 @@ io.on('connection', function(socket){
 	socket.on("playerspeak",function(str){
 		socket.broadcast.emit("playerspeak",str);
 	});
-	socket.on("updateme",function(){
+	socket.on("updateme",function(username){
 		/*for (var p in players)
 			if (p !== "sets")// && players[p].online)
 				players[p].online = false;
 			//plays.push(players[p]);
 		io.emit("pingactive");*/
 		
-		
+		accounts[username].inactivity = 0;
+		accounts[username].online = true;
 		
 		var plays = [];
 		for (var p in players)
-			if (p !== "sets" && players[p].online)
+			if (p !== "sets" && accounts[p].online)
 				plays.push(players[p]);
 		//socket.emit("updateworld",worlddata);
 		socket.emit("getplayers",plays);

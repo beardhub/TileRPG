@@ -304,13 +304,15 @@ function TileRpgFramework(){
 			});
 			Trpg.socket.on("enterserver",function(data){
 				//alert("Login successful");
-				new Trpg.World(data.w.seed);
+				StartGame(false, data);
+				H.add(new Utils.Timer(.1).start().setLoop(true).setAuto(true,function(){Trpg.socket.emit("updateme",Trpg.player.username);}));
+				/*new Trpg.World(data.w.seed);
 				Trpg.player = new Trpg.Player().load(data.p);
 				Trpg.world.loadChanges(data.w);
 				H.add(Trpg.board,"Gameplay.Board.");
 				H.add(Trpg.invent,"Gameplay.InvTabs.Invent.");
 				Trpg.socket.emit("saveplayer",Trpg.player.save());
-				H.settab("Gameplay");
+				H.settab("Gameplay");*/
 				//console.log(data.p);
 			});
 			Trpg.socket.on("usertaken",function(){
@@ -427,7 +429,6 @@ function TileRpgFramework(){
 							Trpg.otherplayers.push(new Trpg.OtherPlayer(players[p]));
 					}*/
 			});
-			H.add(new Utils.Timer(.1).start().setLoop(true).setAuto(true,function(){Trpg.socket.emit("updateme");}));
 			
 			return m;
 		}
@@ -558,25 +559,36 @@ function TileRpgFramework(){
 		H.settab("TitleMenu")
 		//Trpg.Board = H.get("Gameplay.Board");
 		
-		function StartGame(newgame){
-			new Trpg.World("zack is cool");
-			Trpg.player = new Trpg.Player();
-			//Trpg.player = new Trpg.Player();
-			if (newgame)
-			//Invent.add(Trpg.invent);
-				localStorage.removeItem("TRPGSaveSlot");//+this.slot);
-			if (localStorage.getItem("TRPGSaveSlot"/*+this.slot*/)!=null)
-				Trpg.world.loadChanges(JSON.parse(localStorage.getItem("TRPGSaveSlot"/*+this.slot*/)));
-			
-			H.add(Trpg.board,"Gameplay.Board.");
-			H.add(Trpg.invent,"Gameplay.InvTabs.Invent.");
+		function StartGame(newgame,data){
+			if (exists(data)){
+				new Trpg.World(data.w.seed);
+				Trpg.player = new Trpg.Player().load(data.p);
+				Trpg.world.loadChanges(data.w);
+				//H.add(Trpg.board,"Gameplay.Board.");
+				//H.add(Trpg.invent,"Gameplay.InvTabs.Invent.");
+				//H.settab("Gameplay");
+			} else {
+				new Trpg.World("zack is cool");
+				Trpg.player = new Trpg.Player();
+				//Trpg.player = new Trpg.Player();
+				if (newgame)
+				//Invent.add(Trpg.invent);
+					localStorage.removeItem("TRPGSaveSlot");//+this.slot);
+				if (localStorage.getItem("TRPGSaveSlot"/*+this.slot*/)!=null)
+					Trpg.world.loadChanges(JSON.parse(localStorage.getItem("TRPGSaveSlot"/*+this.slot*/)));
+			}
 			//window.onbeforeunload = Trpg.SaveGame;
-			H.settab("Gameplay");
 			if (Trpg.ismobile){
 				H.w = 800;
 				H.h = 800;
 				H.container.stretchfit(H);
+			} else {
+				H.add(Trpg.board,"Gameplay.Board.");
+				H.add(Trpg.invent,"Gameplay.InvTabs.Invent.");
 			}
+			if (Trpg.socket)
+				Trpg.socket.emit("saveplayer",Trpg.player.save());
+			H.settab("Gameplay");
 		}
 	}
 	/*function JoinMultiplayer(){
@@ -828,6 +840,7 @@ function TileRpgFramework(){
 			update:function(d){
 				if (this.targ !== -1 && !this.targ.inmdist(this.loc,.1))
 					this.move(d);
+				else this.targ = -1;
 			},
 			save:function(){},
 			load:function(){}
@@ -1047,13 +1060,13 @@ function TileRpgFramework(){
 					} catch(e){}
 				return;
 			case "listplayers":
-				var str = "";
+				var str = Trpg.player.gettitle()+" (You) "+Trpg.player.loc.toStr()+"\n";
 				for (var i = 0; i < Trpg.otherplayers.length; i++){
 					var p = Trpg.otherplayers[i];
-					str+=p.username+" "+p.loc.toStr()+"\n";
+					str+=p.gettitle()+" "+p.loc.toStr()+"\n";
 				}
-				if (str == "")
-					str = "no players found";
+				//if (str == "")
+				//	str = "no players found";
 				alert(str);
 				return;
 			case "ownerlogin":
@@ -3102,7 +3115,7 @@ function TileRpgFramework(){
 					Trpg.world.changes[this.loaded[k].code] = changes;
 				}
 			}
-			console.log(changelist);
+			//console.log(changelist);
 			//if (Trpg.socket)	Trpg.socket.emit("sendchanges",Trpg.world.changes);
 			if (Trpg.socket)	Trpg.socket.emit("regchanges",changelist);
 			if (Trpg.ismobile)	Trpg.SaveGame(true);
