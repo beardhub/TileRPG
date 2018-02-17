@@ -60,18 +60,20 @@ function MouseFramework(){
 			this.head = {x:m.x-this.pivot.x,y:m.y-this.pivot.y};
 			if (this.limit < 0)		return;
 			var length2 = Math.sqrt(this.head.x*this.head.x+this.head.y*this.head.y);
+			if (length2 < this.limit)	return;
 			this.head.x*=(this.limit)/length2;
 			this.head.y*=(this.limit)/length2;
 		}
-		this.renderj = function(g){
+		this.renderj = function(g,x,y){
 			if (this.limit < 0 || this.pivot == -1)		return;
 			var length2 = this.head.x*this.head.x+this.head.y*this.head.y;
 			g.save();
+			g.translate(x||0,y||0);
 			g.beginPath();
 			g.arc(0,0,5,-Math.PI/2,2*Math.PI);
 			g.fill();
 			g.rotate(Math.atan2(this.head.y,this.head.x));
-			g.fillRect(5,-2,Math.sqrt(length2)*5,4);
+			g.fillRect(5,-2,Math.sqrt(length2),4);
 			g.restore();
 		}
 	}

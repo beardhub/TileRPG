@@ -131,15 +131,11 @@ function TileRpgFramework(){
 		this.toStr = function(){
 			return "("+this.wx+", "+this.wy+", "+this.cx+", "+this.cy+", "+this.dim+")";
 		}
+		this.tomStr = function(){
+			return "("+this.wx+", "+this.wy+", "+this.cx+", "+this.cy+", "+this.mx+", "+this.my+", "+this.dim+")";
+		}
 	}
 	this.Populate = function(H){
-		window.onresize = function(){
-			var UU = H.container;
-			M.canvas.width = UU.w = window.innerWidth;
-			M.canvas.height = UU.h = window.innerHeight;
-			H.container.stretchfit(H);
-			console.log("resize");
-		}
 		Trpg.SaveGame = function(force){
 			if (Trpg.socket){
 				Trpg.socket.emit("saveplayer",Trpg.player.save());
@@ -217,8 +213,8 @@ function TileRpgFramework(){
 			})());
 			t.add(new UI.Button(500,300,200,50).sets({color:"green",text:"New Game",key:"n",onclick:function(){StartGame(true);}}));
 			t.add(new UI.Button(500,400,200,50).sets({color:"blue",text:"Load Game",key:"l",onclick:function(){StartGame(false);}}));
-			t.add(new UI.Button(500,500,200,50).sets({color:"purple",text:"Multiplayer",key:"m",onclick:function(){
-				H.newtab("MultiplayerLogin", MultiplayerLogin());H.settab("MultiplayerLogin");}}));
+			//t.add(new UI.Button(500,500,200,50).sets({color:"purple",text:"Multiplayer",key:"m",onclick:function(){
+			//	H.newtab("MultiplayerLogin", MultiplayerLogin());H.settab("MultiplayerLogin");}}));
 			/*t.add(new UI.Button(500,500,200,50).sets({color:"red",text:"Instructions",onclick:function(){
 				function instr(){
 					var box = new UI.DBox(0,0,1200,800);
@@ -466,12 +462,13 @@ function TileRpgFramework(){
 			I.add(new UI.Button(326,64*3.5+6,64,64*3.5).sets({inrender:function(g){
 				g.font = "35px Arial";
 				g.fillStyle = "black";
-				Drw.drawBoxText(g, "S K I L L S", 32, 10, 16);
+				Drw.drawBoxText(g, "S K I L L S", 32, 32, 32);
 			},onclick:function(){I.settab("Skills")}}));
 			I.settab("Invent");
 			s.add({render:function(g){g.fillStyle = "black";g.font = "30px Arial";
 				Drw.drawCText(g,"Coming soon",this.container.w/2,this.container.h/2)}});
 			g.add(M = new UI.DBox(),"Menus");
+			g.add(makeShortcut(new UI.DBox(),"Timers"),"Timers");
 			M.font = "20px Arial";
 			//M.camera.zoom(2);
 			i.color = "rgb(96,96,96)";
@@ -877,6 +874,7 @@ function TileRpgFramework(){
 	}
 	this.otherplayers = [];
 	this.Player = function(username){
+		return new Trpg.Entities.Player(new Trpg.WorldLoc(-1,1,3,3),"Lronnobank");
 		var p = new Trpg.Entities.Entity("Blank",new Trpg.WorldLoc()).sets({
 			username:username || "",
 			privileges:["basic"],
@@ -961,9 +959,15 @@ function TileRpgFramework(){
 				return this;
 			},
 			speed:170,
+			onspawn:function(){
+				console.log("JU");
+				this.hp = this.maxhp;
+				this.loc.load(this.spawn);
+				Trpg.board.load(this.loc);
+			},
 			attrange:1,
-			target:-1,
-			attackdelay:new Utils.Timer(1).start(true),
+			//target:-1,
+			//attackdelay:new Utils.Timer(1).start(true),
 			inrender:function(g){
 				g.drawImage(Ast.i("playerS"),0,0);
 			},
@@ -983,7 +987,7 @@ function TileRpgFramework(){
 					priv = " (Admin)";
 				return this.username+priv;
 			},
-			update:function(dlt){
+			selfupdate:function(dlt){
 				var dx = 0;
 				var dy = 0;
 				
@@ -995,25 +999,28 @@ function TileRpgFramework(){
 					dx = Trpg.joystick.dx();
 					dy = Trpg.joystick.dy();
 				}
-				
 				var speed = this.speed*dlt;
 				if (!Trpg.board.textinp.hasfocus())
 					this.loc.move(dx*speed,dy*speed);
+				if (dx!== 0 || dy!==0)
+					this.targ.load(this.loc.copy());
 				
-				this.attackdelay.update(dlt);
+				//this.attackdelay.update(dlt);
 				
-				if (this.target !== -1){
+				/*if (this.target !== -1){
 					var t = this.target;
 					if (t.loc.inmdist(this.loc,this.attrange)){
 						if (this.attackdelay.consume()){
-							t.damage(1);
+							t.damage(1,this);
 							this.attackdelay.start();
 						}
 							
 					}
-				}
+				}*/
 			}
 		});
+		p.spawn = p.loc.copy();
+		p.respawntimer.dur = 1;
 		return p;
 	}
 	/*function Player(wl){
@@ -2396,6 +2403,13 @@ function TileRpgFramework(){
 							//Trpg.invent.using = -1;
 						//	return;
 						// }
+						/*if (this.over == "board"
+						&& this.tile.traits.walkable
+						&& Trpg.Entities.getents(this.tile.wl).length == 0
+						&& Trpg.board.ground.getitems(this.tile.wl).length == 0){
+							Trpg.player.settarget({loc:this.tile.wl});
+							return;
+						}*/
 						//var tim = Trpg.Home.get("Gameplay.currentaction")
 						if (this.container.menu.has("item0")){
 						var first = this.container.menu.get("item0");
@@ -3066,10 +3080,18 @@ function TileRpgFramework(){
 		return box;//}
 	}*/
 	this.Board = function(){
-		this.chunkloaded = function(code){
+		this.chunkloaded = function(wl){
 			for (var i = 0; i < this.loaded.length; i++)
-				if (this.loaded[i].code == code)
+				if (this.loaded[i].wl.inchunkdist(wl,0))
 					return true;
+		}
+		this.loadchunk = function(wl){
+			if (this.chunkloaded(wl))
+				return;
+			var newchunk = new Trpg.Chunk(wl.wx,wl.wy,wl.dim).generate();
+			this.loaded.push(newchunk);
+			Trpg.Structures.checkchunk(newchunk.wl);
+			newchunk.loadChanges();
 		}
 		this.load = function(wl,force){
 			if (!exists(wl)) wl = new Trpg.WorldLoc(0,0,3,3);
@@ -3078,8 +3100,10 @@ function TileRpgFramework(){
 			var ccenter = new Trpg.WorldLoc(wl.wx,wl.wy,0,0,wl.dim);
 			if (force)
 				this.loaded = [];
-			for (var i = -1; i <= 1; i++)
-				for (var j = -1; j <= 1; j++){
+			for (var i = -this.chunkrad; i <= this.chunkrad; i++)
+				for (var j = -this.chunkrad; j <= this.chunkrad; j++){
+					this.loadchunk(new Trpg.WorldLoc(wl.wx+i,wl.wy+j,0,0,wl.dim));
+					continue;
 					var alreadyin = false;
 					for (var k = 0; k < this.loaded.length; k++)
 						if (this.loaded[k].wl.indist(new Trpg.WorldLoc(wl.wx+i,wl.wy+j,0,0,wl.dim),0))
@@ -3211,6 +3235,7 @@ function TileRpgFramework(){
 			this.running = false;
 			this.forcing = true;
 			this.runenergy = 100;
+			this.chunkrad = 1;
 			//Trpg.player.loc.dim = "underground1";
 			this.load(Trpg.player.loc,true);
 			//this.setTile(new Trpg.Tile("Chest"),new Trpg.WorldLoc(-1,1,5,5))
@@ -3229,7 +3254,7 @@ function TileRpgFramework(){
 			this.dx = 0;
 			this.dy = 0;
 			//this.center.container = this.container;
-			this.viewsize = 7;
+			this.viewsize = 8;
 			this.container.camera.zoomto(1/(this.viewsize-1)/64*this.container.w);
 			this.container.add(new UI.Follow(this.container.camera,Trpg.player.loc,0,0,32));
 			//this.textinp = new Utils.TextInput("allchars")
@@ -3349,7 +3374,6 @@ function TileRpgFramework(){
 			this.aim.my = (y+16).mod(32);
 			
 			this.aim.legalize();
-			
 			if (//Trpg.toolbox.curtool == "none" || 
 				!this.container.mouseonbox(m))//  ||
 				//this.aim.dist(Trpg.player.loc) > 2)
@@ -3588,7 +3612,7 @@ function TileRpgFramework(){
 					Trpg.joystick.renderj(g);
 					g.restore();
 				}
-				if (Trpg.player.attackdelay.progress() < .2
+			/*	if (Trpg.player.attackdelay.progress() < .2
 					&& Trpg.player.target !== -1 
 					&& Trpg.player.target.loc.inmdist(Trpg.player.loc,Trpg.player.attrange)
 					&& Trpg.player.target.hp > 0){
@@ -3602,7 +3626,7 @@ function TileRpgFramework(){
 					g.strokeRect(0,-2,Trpg.player.target.loc.mdist(Trpg.player.loc)*32,6);
 					
 					g.restore();
-				}
+				}*/
 				if (this.hp < this.maxhp){
 					var m = 20*this.hp/this.maxhp;
 					g.fillStyle = "green";
@@ -3651,9 +3675,35 @@ function TileRpgFramework(){
 			
 		}
 	}
+	function Actionable(){
+		this.init = function(){
+			this.actionslist = ["examine"];
+			this.actions = {
+				examine:function(){
+					Trpg.Console.add("No examine text found");
+				}
+			}
+		}
+		this.doaction = function(action,value){
+			if (!exists(action))	action = this.actionslist[0];
+			this.actions[action] && this.actions[action].call(this,value);
+		}
+		this.getactions = function(){
+			return this.actionslist.slice();
+		}
+		this.fillmenu = function(menu){
+			var actions = this.getactions();
+			var actiontarget = this;
+			for (var i = 0; i < actions.length; i++)
+				menu.additem((function(a){return function(){
+					actiontarget.doaction(actions[a]);
+					return "close";
+				}})(i),actions[i].charAt(0).toUpperCase()+actions[i].substring(1)+" "+this.getname());
+		}
+	}
 	function Astar(start, end, range){
 		if (!Trpg.board.getTile(end).traits.walkable)
-			return "failed";
+			return [];
 		//console.log("A*");
 		function Spot(wl,parent,gcost,hcost,dir){
 			this.wl = wl.copy();
@@ -3678,13 +3728,28 @@ function TileRpgFramework(){
 			{x:1,y:0},
 			{x:0,y:1},
 			{x:-1,y:0},
+			{x:-1,y:-1},
+			{x:-1,y:1},
+			{x:1,y:-1},
+			{x:1,y:1},
 			];
 			var adjs = [];
 			for (var i = 0; i < dirs.length; i++){
 				var wl = spot.wl.copy().shift(dirs[i].x,dirs[i].y);
-				if (Trpg.board.getTile(wl).traits.walkable)
-					if (cstrs.indexOf(wl.toStr()) == -1)
+				if (!wl.inchunkdist(Trpg.player.loc,1))
+					Trpg.board.loadchunk(wl.copy());//alert("v");
+				if (//wl.inchunkdist(Trpg.player.loc,1) 
+					//&& wl.indist(Trpg.player.loc,Trpg.board.viewsize) 
+					//&& 
+					Trpg.board.getTile(wl).traits.walkable){
+					if (dirs[i].x*dirs[i].y !== 0){ // if diag
+						if (Trpg.board.getTile(spot.wl.copy().shift(dirs[i].x,0)).traits.walkable ||
+							Trpg.board.getTile(spot.wl.copy().shift(0,dirs[i].y)).traits.walkable)
+							if (cstrs.indexOf(wl.toStr()) == -1)
+								adjs.push(new Spot(wl,spot,11,manH(wl,end),dirs[i]));
+					} else if (cstrs.indexOf(wl.toStr()) == -1)
 						adjs.push(new Spot(wl,spot,10,manH(wl,end),dirs[i]));
+				}
 			}
 			return adjs;
 		}
@@ -3698,6 +3763,7 @@ function TileRpgFramework(){
 		function makepath(spot){
 			if (spot.parent == -1)
 				return [];
+			//Trpg.board.getTile(spot.wl).highlighted = true;
 			var p = makepath(spot.parent);
 			p.push(spot.dir);
 			return p;
@@ -3710,557 +3776,701 @@ function TileRpgFramework(){
 		while (openlist.length > 0){
 			var lowf = picklowf(openlist);
 			openlist.splice(openlist.indexOf(lowf),1);
-			ostrs.splice(ostrs.indexOf(lowf.wl.toStr()));
+			ostrs.splice(ostrs.indexOf(lowf.wl.toStr()),1);
 			closedlist.push(lowf);
 			cstrs.push(lowf.wl.toStr());
-			if (!lowf.wl.indist(start,range)){
+			if (!lowf.wl.indist(start,range))
 				//console.log(lowf.wl.toStr());
 				//console.log(start.toStr());
 				//console.log(range);
-				return "failed";
+				;//return [];
+			if (!lowf.wl.inchunkdist(Trpg.player.loc,1)){
+				//alert(lowf.wl.toStr());
+				//Trpg.board.loadchunk(lowf.wl);
+				//continue;
+				//return [];
 			}
-			if (!lowf.wl.indist(Trpg.player.loc,Trpg.board.viewsize))
-				return "failed";
 			if (lowf.wl.indist(end,0))
 				return makepath(lowf);
 			var adjs = getadj(lowf);
 			for (var j = 0; j < adjs.length; j++){
-				if (ostrs.indexOf(adjs[j].wl.toStr())!==-1)
+				if (ostrs.indexOf(adjs[j].wl.toStr())!==-1){
 					for (var k = 0; k < openlist.length; k++)
-						if (openlist[k].wl.indist(adjs[j].wl,0) && openlist[k].gcost > adjs[j].gcost){
+						if (openlist[k].wl.indist(adjs[j].wl,0) && openlist[k].gcost > adjs[j].gcost)
 							openlist[k] = adjs[j];
-							continue;
-						}
-				openlist.push(adjs[j]);
+				} else {
+					openlist.push(adjs[j]);
+					ostrs.push(adjs[j].wl.toStr());
+				}
 			}
 		}
-		return "failed";
+		return [];
 	}
 	this.Entities = new (function(){
-		this.Entity = function(type,wl){
-			function Default(wl){
-				this.cb = 0;
-				this.maxhp = this.hp = 0;
-				this.attackable = true;
-				this.spawn = wl.copy();
+		Entity.prototype = new Actionable();
+		function Entity(){
+			this.init = function(wl){
+				Entity.prototype.init.call(this);
 				this.loc = wl.copy();
+				this.spawn = wl.copy();
 				this.loc.mx = this.loc.my = 16;
-				this.actions = ["examine"];
-				this.speed = 50;
-				this.attackdelay = new Utils.Timer(1).start(true);
-				this.attrange = 1;
 				this.loc.onmove = function(wl){
 					return (Trpg.board.getTile(wl).traits.walkable);
 				}
-				var that = this;
-				this.damage = function(amt){
-					this.hp-=amt;
-					this.changestate("playeragro");
-					if (this.hp <= 0){
-						this.ondeath();
-						this.respawntimer.start();
-						if (Trpg.player.target==this)
-							Trpg.player.target = -1;
-					}
-				}
-				this.respawntimer = new Utils.Timer(5).setAuto(true,function(){
-					that.hp = that.maxhp;
-					that.loc.load(that.spawn);
-					that.changestate("wander");
-				});
-				this.saying = "";
-				this.targ = wl.copy();
-				//this.mx = this.my = 16;
-				this.range = 5;
 				this.path = [];
-				/*this.djisk = function(swl,ewl){
-					var range = this.range;//swl.dist(ewl);
-					var visited = [swl.toStr()];
-					function Spot(wl,path){
-						this.wl = wl.copy();
-						this.path = path.slice();
-					}
-					var q = [new Spot(swl,[])];
-					while (q.length > 0){
-						var cur = q.shift();
-						visited.push(cur.wl.toStr());
-						var dirs = ["n","e","s","w"];
-						for (var i = 0; i < dirs.length; i++){
-							var d = explore(cur,dirs[i]);
-							if (visited.indexOf(d.wl.toStr())!==-1 || d.wl.dist(this.spawn)>this.range)
-								continue;
-							if (d.wl.dist(ewl)==0)
-								return this.path = d.path;
-							else if (visited.indexOf(d.wl.toStr())==-1
-								&& Trpg.board.getTile(d.wl).traits.walkable)
-								//&& swl.dist(d.wl)<range){
-								q.push(d);
-							// }
-								visited.push(d.wl.toStr());
-						}
-					}
-					function explore(spot, dir){
-						var dirs = {
-							n:{x:0,y:-1},
-							e:{x:1,y:0},
-							s:{x:0,y:1},
-							w:{x:-1,y:0},
-							//ne:{x:1,y:-1},
-							//nw:{x:-1,y:-1},
-							//se:{x:1,y:1},
-							//sw:{x:-1,y:1},
-						}
-						/*if (dir.length > 1){
-							var d = dirs[dir];
-							var sideh = spot.wl.copy().shift(d.x,0);
-							var sidev = spot.wl.copy().shift(0,d.y);
-							
-						}*
-						var d = dirs[dir];
-						var p = spot.path.slice();
-						p.push(d);
-						return new Spot(spot.wl.copy().shift(d.x,d.y),p);
-					}
-					
-					/*
-					function shortest(ogrid){
-						var grid = [];
-						var p;
-						var x, y;
-						for (var i = 0; i < ogrid.length; i++){
-							var row = [];
-							for (var j = 0; j < ogrid.length; j++){
-								if (ogrid[i][j] == 1)
-									p = {x:j,y:i};
-									//x = j;
-									//y = i;
-								row.push(ogrid[i][j]);
-							}
-							grid.push(row);
-						}
-						
-						//var x = pos.x;
-						//var y = pos.y;
-						
-						var loc = new Loc(p.x,p.y,[],"start");
-						var q = [loc];
-						var path = [];
-						var i = 0;
-						while (q.length > 0){// && i < t*t){
-							var cur = q.shift();
-							i++;
-							
-							var w = exploreDir(cur, "KeyW", grid);
-							var a = exploreDir(cur, "KeyA", grid);
-							var s = exploreDir(cur, "KeyS", grid);
-							var d = exploreDir(cur, "KeyD", grid);
-							
-							var ord = [w,s,a,d];
-							var scram = [0,0,0,0];
-							while (ord.length > 0){
-								var rand = Math.floor(Math.random()*4);
-								while (scram[rand] != 0)
-									rand = Math.floor(Math.random()*4);
-								scram[rand] = ord.shift();
-							}
-							for (var i = 0; i < scram.length; i++)
-								if (scram[i].stat == "visiting")
-									q.push(scram[i]);
-								else if (scram[i].stat == "goal" && path.length == 0)
-									path = scram[i].path.slice();
-						}
-						return path;
-						//if ()
-						//return [];
-					}
-					
-					function exploreDir(pos, dir, grid, gost){
-						var p = pos.copy();
-						switch (dir){
-							case "KeyW":	p.y--;	break;
-							case "KeyA":	p.x--;	break;
-							case "KeyS":	p.y++;	break;
-							case "KeyD":	p.x++;	break;
-						}
-						if (typeof grid == "undefined")
-							return p;
-						//console.log(p);
-						//if ((getG(vgrid,p)!=2&&that.collide(p))
-						if (that.oob(p) || getG(grid, p) == 0){
-							//setG(vgrid, p, 0);
-							p.stat = "blocked";
-						}
-						else {
-							p.path.push(dir);
-							if (getG(grid, p) == -1){
-								if (!gost)
-								setG(grid, p, 0);
-								p.stat = "visiting";
-							} else if (getG(grid, p) == 2){
-								p.stat = "goal";
-							}
-						}
-						return p;
-					}
-				}*/
-				/*this.pickwander = function(){
-					//do {
-					//	this.targ = this.loc.copy().shift(Math.floor(Math.random()*10)-5,Math.floor(Math.random()*10)-5);
-					// } while (this.targ.dist(this.spawn)>=this.range || !Trpg.board.getTile(this.targ).getTrait("walkable"));
-					//this.djisk(this.loc,this.targ);
-					this.path = Astar(this.loc,Trpg.player.loc);
-					//this.djisk(this.loc,Trpg.player.loc);
-					if (this.path.length > 0)
-					this.targ = this.loc.copy().shift(this.path[0].x,this.path[0].y);
-					//console.log(this.path);
-					//console.log(this.loc.toStr());
-					//console.log(this.loc.copy().shift(-3,3).toStr());
-				}*/
-				this.state = "wander";
-				this.ondeath = function(){}
-				this.changestate = function(state){
-					this.state = state;
-					this.path = [];
-					this.targ = this.loc.copy();
-					//console.log(state);
-				}
-				this.setcb = function(cb){
-					this.cb = cb;
-					return this;
-				}
-				this.say = function(str){
-					var that = this;
-					this.saying = str;
-					this.saytimer = new Utils.Timer(2).setAuto(true,function(){that.saying = ""}).setKilloncomp(true);
-					Trpg.board.container.add(this.saytimer);
-					this.saytimer.start();
-					if (this.type == "Player"){
-						if (Trpg.socket)
-							Trpg.socket.emit("playerspeak",this.gettitle() + ": "+str);
-						Trpg.Console.add(this.gettitle() + ": "+str);
-					}
-					return;
-					//Trpg.board.container.add(new feedback(str,
-					//Trpg.player.loc.mdx(this.loc)*32+16+Trpg.board.container.camera.x,
-					//Trpg.player.loc.mdy(this.loc)*32+Trpg.board.container.camera.y,1.5),"feedback");
-					//Trpg.player.loc.dx(this.loc)*32+16+Trpg.board.container.camera.x,
-					//Trpg.player.loc.dy(this.loc)*32+Trpg.board.container.camera.y,1.5),"feedback");
-				}
-				this.examine = function(){
-					this.say("A default entity");
-				}
-				this.attack = function(){
+				this.nexttile = this.loc.copy();
+				this.target = -1;
+				this.speed = 50;
+				//this.respawntimer = new Utils.Timer(5).setAuto(true,(function(){this.onspawn()}).bind(this));
+				//this.actionslist = ["examine"];
+				//return this;
+			}
+			this.getname = function(){
+				return this.type+(this.cb > 0?" (lvl "+this.cb+")":"");
+			}
+			/*this.actions = {
+				attack:function(){
 					cancelaction();
-					Trpg.player.target = this;
+					Trpg.player.attack(this);
+				},
+				examine:function(){
+					Trpg.Console.add("A default entity");
 				}
-				this.doaction = function(action,value){
-					if (!exists(action))	action = this.actions[0];
-					this[action] && this[action](value);
-					/*var wl = this.wl;
-					switch (action){
-						case "examine":
-							this.examine();
-							break;
-						case "attack":
-							Trpg.player.target = this;
-							break;
-					}*/
+			}*/
+			this.damage = function(amt, source){
+				this.hp-=amt;
+				this.changestate("playeragro");
+				this.attack(source);
+				this.attackedby.push(source);
+				if (this.hp <= 0){
+					this.ondeath();
+					var respawnent = this;
+					Timers.add(new Utils.Timer(this.respawndelay).start().setAuto(true,function(){
+						Trpg.Entities.add(respawnent);
+						respawnent.onspawn();
+					}).setKilloncomp(true));
+					Trpg.Entities.remove(this);
+					//this.respawntimer.start();
+					this.attacktarget = -1;
+					for (var i = 0; i < this.attackedby.length; i++)
+						if (this.attackedby[i].target == this)
+							this.attackedby[i].target = -1;
+					this.attackedby = [];
+					//if (Trpg.player.attacktarget==this)
+					//	Trpg.player.attacktarget = -1;
 				}
-				this.fillmenu = function(menu){
-					if (this.hp <= 0 && this.attackable)
-						return;
-					var that = this;
-					var actions = this.actions.slice();
-					if (this.attackable){
-						if (this.cb>=10)
-							actions.push("attack");
-						else actions.unshift("attack");
+			}
+			this.ondeath = function(){}
+			this.onspawn = function(){
+				this.hp = this.maxhp;
+				this.loc.load(this.spawn);
+				this.changestate("wander");
+			}
+		//	console.log(this);
+			this.saying = "";
+			this.attacktarget = -1;
+			this.attack = function(target){
+				this.settarget(target, function(){if (this.target!== -1 && !this.target.loc.inmdist(this.loc,this.attrange))this.attack(this.target)});
+			}
+			//this.mx = this.my = 16;
+			this.range = 5;
+			/*this.djisk = function(swl,ewl){
+				var range = this.range;//swl.dist(ewl);
+				var visited = [swl.toStr()];
+				function Spot(wl,path){
+					this.wl = wl.copy();
+					this.path = path.slice();
+				}
+				var q = [new Spot(swl,[])];
+				while (q.length > 0){
+					var cur = q.shift();
+					visited.push(cur.wl.toStr());
+					var dirs = ["n","e","s","w"];
+					for (var i = 0; i < dirs.length; i++){
+						var d = explore(cur,dirs[i]);
+						if (visited.indexOf(d.wl.toStr())!==-1 || d.wl.dist(this.spawn)>this.range)
+							continue;
+						if (d.wl.dist(ewl)==0)
+							return this.path = d.path;
+						else if (visited.indexOf(d.wl.toStr())==-1
+							&& Trpg.board.getTile(d.wl).traits.walkable)
+							//&& swl.dist(d.wl)<range){
+							q.push(d);
+						// }
+							visited.push(d.wl.toStr());
 					}
-					for (var i = 0; i < actions.length; i++)
-						menu.additem((function(a){return function(){
-							//if (Trpg.Home.get("Gameplay").has("currentaction"))
-							//	if (Trpg.Home.get("Gameplay.currentaction").wl.dist(that.wl)==0){
-							//		Trpg.Home.get("Gameplay").remove("currentaction");
-							//		return "close";
-							//	}
-							that.doaction(actions[a]);
-							return "close";
-							};})(i),actions[i].charAt(0).toUpperCase()+actions[i].substring(1)
-								+" "+this.type+(this.cb > 0?" (lvl "+this.cb+")":""));
 				}
-				this.update = function(d){
-					if (this.hp <= 0 && this.attackable)
-						return this.respawntimer.update(d);
-					//if (this.loc.dist(Trpg.player.loc)>Trpg.board.viewsize)return;
-					switch (this.state){
-						case "wander":
-							if (Math.random()*5>d)//seconds
-								break;
-						case "return":
-					//console.log(this.state);
-							if (this.path.length > 0 || !this.targ.indist(this.loc,0))
-								break;
-							this.changestate("wander");
-							/*if (this.loc.dist(Trpg.player.loc) < this.range && this.spawn.dist(Trpg.player.loc) < this.range){
-								this.changestate("playeragro");
-								break;
-							}*/
-							var targ;
-							var reps = 0;
-							do {
-								reps++;
-								targ = this.spawn.copy().shift(
-									Math.floor(Math.random()*this.range*2)-this.range,
-									Math.floor(Math.random()*this.range*2)-this.range)
-								//targ = this.loc.copy().shift(Math.floor(Math.random()*10)-5,Math.floor(Math.random()*10)-5);
-							} while (
-								reps < 10
-								&& (false//targ.dist(this.spawn)>this.range
-								|| !Trpg.board.getTile(targ).traits.walkable
-								|| !Trpg.player.loc.indist(targ,Trpg.board.viewsize)
-								|| Astar(this.loc,targ,10)=="failed"));
-							if (reps < 10)
-								this.path = Astar(this.loc,targ,10);
-							//else this.path = [];
-							//console.log(this.path);
-							//if (this.loc.dist(Trpg.player.loc) < 5 && this.spawn.dist(Trpg.player.loc)<this.range){
-								//this.changestate("playeragro");
-							//	console.log("wefr");
-							// }
-							break;
-						case "playeragro":
-							if (!this.spawn.indist(Trpg.player.loc,this.range)){
-								this.changestate("return");
-								return;
-							}
-							//if (this.path.length > 0 || this.targ.dist(this.loc) > 0)
-							//	break;
-							if (!this.targ.indist(this.loc,0))// || this.spawn.dist(Trpg.player.loc) > this.range)
-								break;
-							this.path = Astar(this.loc,Trpg.player.loc,10);
-							//if (this.spawn.dist(Trpg.player.loc) > this.range || this.loc.dist(this.spawn) > this.range)
-							//	this.changestate("wander");
-							
-							break;
+				function explore(spot, dir){
+					var dirs = {
+						n:{x:0,y:-1},
+						e:{x:1,y:0},
+						s:{x:0,y:1},
+						w:{x:-1,y:0},
+						//ne:{x:1,y:-1},
+						//nw:{x:-1,y:-1},
+						//se:{x:1,y:1},
+						//sw:{x:-1,y:1},
+					}
+					/*if (dir.length > 1){
+						var d = dirs[dir];
+						var sideh = spot.wl.copy().shift(d.x,0);
+						var sidev = spot.wl.copy().shift(0,d.y);
+						
+					}*
+					var d = dirs[dir];
+					var p = spot.path.slice();
+					p.push(d);
+					return new Spot(spot.wl.copy().shift(d.x,d.y),p);
+				}
+				
+				/*
+				function shortest(ogrid){
+					var grid = [];
+					var p;
+					var x, y;
+					for (var i = 0; i < ogrid.length; i++){
+						var row = [];
+						for (var j = 0; j < ogrid.length; j++){
+							if (ogrid[i][j] == 1)
+								p = {x:j,y:i};
+								//x = j;
+								//y = i;
+							row.push(ogrid[i][j]);
+						}
+						grid.push(row);
 					}
 					
-					if (this.path !== "failed" && this.path.length > 0 && this.targ.indist(this.loc,0)){
-							var p = this.path.shift();
-							this.targ.shift(p.x,p.y);
-							//console.log("Acesrgty");
+					//var x = pos.x;
+					//var y = pos.y;
+					
+					var loc = new Loc(p.x,p.y,[],"start");
+					var q = [loc];
+					var path = [];
+					var i = 0;
+					while (q.length > 0){// && i < t*t){
+						var cur = q.shift();
+						i++;
+						
+						var w = exploreDir(cur, "KeyW", grid);
+						var a = exploreDir(cur, "KeyA", grid);
+						var s = exploreDir(cur, "KeyS", grid);
+						var d = exploreDir(cur, "KeyD", grid);
+						
+						var ord = [w,s,a,d];
+						var scram = [0,0,0,0];
+						while (ord.length > 0){
+							var rand = Math.floor(Math.random()*4);
+							while (scram[rand] != 0)
+								rand = Math.floor(Math.random()*4);
+							scram[rand] = ord.shift();
 						}
-						//console.log(this.path);
-					//if (this.path.length > 0)
-					if (this.targ.isdist(this.loc,1))
-						this.move(d);
-					/*if (this.loc.dist(Trpg.player.loc) > Trpg.board.viewsize)
-					//	return;
-					/*if (this.targ.dist(this.loc) == 0 && this.path.length > 0){
-						var dir = this.path.shift();
-						this.targ.shift(dir.x,dir.y);
+						for (var i = 0; i < scram.length; i++)
+							if (scram[i].stat == "visiting")
+								q.push(scram[i]);
+							else if (scram[i].stat == "goal" && path.length == 0)
+								path = scram[i].path.slice();
 					}
-					if (this.path.length > 0)
-					//if (this.loc.dist(this.targ) > 0)// || (Math.abs(this.mx-16) > 2 || Math.abs(this.my-16) > 2))
-						this.move(d);
-					else if (Math.random()<.5*d)*
-					//if (this.path.length == 0 || this.path == "failed")// && Math.random()<.5*d)
-					//	this.pickwander();
-					//if (this.path == "failed")
-					//	return;
-					if (this.targ.dist(this.loc)==0 && this.path.length > 0){
-						if (this.path !== "failed"){
-							var p = this.path.shift();
-							this.targ.shift(p.x,p.y);
-						} else return;
-						this.pickwander();
-					//}
-					if (this.path.length > 0)
-						this.move(d);
-					//	this.targ.shift()
-					//this.targ = this.loc.copy().shift
-					*/
+					return path;
+					//if ()
+					//return [];
 				}
-				this.move = function(d){
-					//var a = Math.atan2(this.loc.dy(this.targ)*32+16-this.my,this.loc.dx(this.targ)*32+16-this.mx);
-					var a = Math.atan2(this.loc.mdy(this.targ)*32,this.loc.mdx(this.targ)*32);
-					//this.mx+=Math.cos(a)*70*d;
-					//this.my+=Math.sin(a)*70*d;
-					//this.type = a;
+				
+				function exploreDir(pos, dir, grid, gost){
+					var p = pos.copy();
+					switch (dir){
+						case "KeyW":	p.y--;	break;
+						case "KeyA":	p.x--;	break;
+						case "KeyS":	p.y++;	break;
+						case "KeyD":	p.x++;	break;
+					}
+					if (typeof grid == "undefined")
+						return p;
+					//console.log(p);
+					//if ((getG(vgrid,p)!=2&&that.collide(p))
+					if (that.oob(p) || getG(grid, p) == 0){
+						//setG(vgrid, p, 0);
+						p.stat = "blocked";
+					}
+					else {
+						p.path.push(dir);
+						if (getG(grid, p) == -1){
+							if (!gost)
+							setG(grid, p, 0);
+							p.stat = "visiting";
+						} else if (getG(grid, p) == 2){
+							p.stat = "goal";
+						}
+					}
+					return p;
+				}
+			}*/
+			/*this.pickwander = function(){
+				//do {
+				//	this.targ = this.loc.copy().shift(Math.floor(Math.random()*10)-5,Math.floor(Math.random()*10)-5);
+				// } while (this.targ.dist(this.spawn)>=this.range || !Trpg.board.getTile(this.targ).getTrait("walkable"));
+				//this.djisk(this.loc,this.targ);
+				this.path = Astar(this.loc,Trpg.player.loc);
+				//this.djisk(this.loc,Trpg.player.loc);
+				if (this.path.length > 0)
+				this.targ = this.loc.copy().shift(this.path[0].x,this.path[0].y);
+				//console.log(this.path);
+				//console.log(this.loc.toStr());
+				//console.log(this.loc.copy().shift(-3,3).toStr());
+			}*/
+			this.state = "wander";
+			this.changestate = function(state){
+				this.state = state;
+				this.path = [];
+				this.targ = this.loc.copy();
+				//console.log(state);
+			}
+			this.setcb = function(cb){
+				this.cb = cb;
+				return this;
+			}
+			this.say = function(str){
+				var that = this;
+				this.saying = str;
+				this.saytimer = new Utils.Timer(2).setAuto(true,function(){that.saying = ""}).setKilloncomp(true);
+				Trpg.board.container.add(this.saytimer);
+				this.saytimer.start();
+				if (this.type == "Player"){
+					if (Trpg.socket)
+						Trpg.socket.emit("playerspeak",this.gettitle() + ": "+str);
+					Trpg.Console.add(this.gettitle() + ": "+str);
+				}
+				return;
+				//Trpg.board.container.add(new feedback(str,
+				//Trpg.player.loc.mdx(this.loc)*32+16+Trpg.board.container.camera.x,
+				//Trpg.player.loc.mdy(this.loc)*32+Trpg.board.container.camera.y,1.5),"feedback");
+				//Trpg.player.loc.dx(this.loc)*32+16+Trpg.board.container.camera.x,
+				//Trpg.player.loc.dy(this.loc)*32+Trpg.board.container.camera.y,1.5),"feedback");
+			}
+			/*this.examine = function(){
+				this.say("A default entity");
+			}
+			this.attack = function(){
+				cancelaction();
+				Trpg.player.target = this;
+			}*/
+			/*this.doaction = function(action,value){
+				if (!exists(action))	action = this.actionslist[0];
+				this.actions[action] && this.actions[action].call(this,value);
+				/*var wl = this.wl;
+				switch (action){
+					case "examine":
+						this.examine();
+						break;
+					case "attack":
+						Trpg.player.target = this;
+						break;
+				}*
+			}
+			this.fillmenu = function(menu){
+				if (this.hp <= 0 && this.attackable)
+					return;
+				var that = this;
+				var actions = this.actionslist.slice();
+				if (this.attackable){
+					if (this.cb>=10)
+						actions.push("attack");
+					else actions.unshift("attack");
+				}
+				var actiontarget = this;
+				for (var i = 0; i < actions.length; i++)
+					menu.additem((function(a){return function(){
+						//if (Trpg.Home.get("Gameplay").has("currentaction"))
+						//	if (Trpg.Home.get("Gameplay.currentaction").wl.dist(that.wl)==0){
+						//		Trpg.Home.get("Gameplay").remove("currentaction");
+						//		return "close";
+						//	}
+						actiontarget.doaction(actions[a]);
+						return "close";
+						}})(i),actions[i].charAt(0).toUpperCase()+actions[i].substring(1)
+							+" "+this.type+(this.cb > 0?" (lvl "+this.cb+")":""));
+			}*/
+			this.movetotarget = function(d){
+				if (this.path.length > 0 && this.nexttile.indist(this.loc,.2)){
+					var p = this.path.shift();
+					this.nexttile.shift(p.x,p.y);
+					this.nexttile.mx = this.nexttile.my = 16;	
+				}
+				if (this.target.loc.inmdist(this.loc,.2))
+					return;
+				if (this.target.loc.indist(this.loc,0) && !this.target.loc.inmdist(this.loc,.2)){
+					var a = Math.atan2(this.loc.mdy(this.target.loc)*32,this.loc.mdx(this.target.loc)*32);
 					this.loc.move(Math.cos(a)*this.speed*d,Math.sin(a)*this.speed*d);
-					/*
-					//if (this.loc.dist(this.targ) == 0)	return;
-					var loc = this.loc.copy();
-					if (this.mx < 0 || this.mx >= 32){
-						loc.cx+=Math.sign(Math.cos(a));
-						loc.legalize();
-						if (!Trpg.board.getTile(loc).getTrait("walkable")){
-							loc.cx-=Math.sign(Math.cos(a));
-							loc.legalize();
-							this.targ.load(loc);
-							this.mx-=Math.cos(a)*70*d;
-						} else {
-							this.mx-=32*Math.sign(Math.cos(a));
-						}
-					}
-					if (this.my < 0 || this.my >= 32){
-						loc.cy+=Math.sign(Math.sin(a));
-						loc.legalize();
-						if (!Trpg.board.getTile(loc).getTrait("walkable")){
-							loc.cy-=Math.sign(Math.sin(a));
-							loc.legalize();
-							this.targ.load(loc);
-							this.my-=Math.sin(a)*70*d;
-						} else {
-							this.my-=32*Math.sign(Math.sin(a));
-						}
-					}
-					loc.legalize();
-					this.loc.load(loc);*/
-					//Trpg.board.aim = this.loc;
+					return;
 				}
-				this.inrender = function(g){
+				if (this.nexttile.isdist(this.loc,1)){
+					var a = Math.atan2(this.loc.mdy(this.nexttile)*32,this.loc.mdx(this.nexttile)*32);
+					this.loc.move(Math.cos(a)*this.speed*d,Math.sin(a)*this.speed*d);
+				}
+			}
+			this.settarget = function(targ, onreach){
+				this.target = targ;
+				this.path = Astar(this.loc,this.target.loc,15);
+				this.nexttile = this.loc.copy();
+				this.onreachtarget = onreach || function(){this.target = -1};
+						/*if (!this.spawn.indist(Trpg.player.loc,this.range)){
+							this.changestate("return");
+							return;
+						}
+						//if (this.path.length > 0 || this.targ.dist(this.loc) > 0)
+						//	break;
+						if (this.loc.inmdist(Trpg.player.loc,this.attrange))// || this.spawn.dist(Trpg.player.loc) > this.range)
+							break;
+						this.path = Astar(this.loc,Trpg.player.loc,10);*/
+			}
+			this.onreachtarget = function(){
+				
+			}
+			this.update = function(d){
+				//this.selfupdate && this.selfupdate(d);
+				//if (this.hp <= 0)// && this.attackable)
+				//	return this.respawntimer.update(d);
+			
+				if (this.type!=="Player"){
+					if (this.target == -1 && Math.random()*5<d)
+						this.settarget({loc:this.spawn.copy().shift(
+							Math.floor(Math.random()*this.range*2)-this.range,
+							Math.floor(Math.random()*this.range*2)-this.range)});
+				}
+					if (this.target !== -1)// && !this.loc.inmdist(this.target.loc,.75))
+						this.movetotarget(d);
+					if (this.path.length == 0 && this.target !== -1  && this.target.loc.inmdist(this.loc,.2))
+						this.onreachtarget();
+			
+				if (this.type !== "Player"){
+					return;
+				//if (this.loc.dist(Trpg.player.loc)>Trpg.board.viewsize)return;
+				switch (this.state){
+					case "wander":
+						if (Math.random()*5>d)//seconds
+							break;
+					case "return":
+				//console.log(this.state);
+						if (this.path.length > 0 || !this.targ.indist(this.loc,0))
+							break;
+						this.changestate("wander");
+						/*if (this.loc.dist(Trpg.player.loc) < this.range && this.spawn.dist(Trpg.player.loc) < this.range){
+							this.changestate("playeragro");
+							break;
+						}*/
+						var targ;
+						var reps = 0;
+						do {
+							reps++;
+							targ = this.spawn.copy().shift(
+								Math.floor(Math.random()*this.range*2)-this.range,
+								Math.floor(Math.random()*this.range*2)-this.range)
+							//targ = this.loc.copy().shift(Math.floor(Math.random()*10)-5,Math.floor(Math.random()*10)-5);
+						} while (
+							reps < 10
+							&& (false//targ.dist(this.spawn)>this.range
+							|| !Trpg.board.getTile(targ).traits.walkable
+							|| !Trpg.player.loc.indist(targ,Trpg.board.viewsize)
+							|| Astar(this.loc,targ,10)=="failed"));
+						if (reps < 10)
+							this.path = Astar(this.loc,targ,10);
+						//else this.path = [];
+						//console.log(this.path);
+						//if (this.loc.dist(Trpg.player.loc) < 5 && this.spawn.dist(Trpg.player.loc)<this.range){
+							//this.changestate("playeragro");
+						//	console.log("wefr");
+						// }
+						break;
+					case "playeragro":
+						if (!this.spawn.indist(Trpg.player.loc,this.range)){
+							this.changestate("return");
+							return;
+						}
+						//if (this.path.length > 0 || this.targ.dist(this.loc) > 0)
+						//	break;
+						if (this.loc.inmdist(Trpg.player.loc,this.attrange))// || this.spawn.dist(Trpg.player.loc) > this.range)
+							break;
+						this.path = Astar(this.loc,Trpg.player.loc,10);
+						//if (this.spawn.dist(Trpg.player.loc) > this.range || this.loc.dist(this.spawn) > this.range)
+						//	this.changestate("wander");
+						
+						break;
+				}
+				}
+				/*if (this.path.length > 0 && this.targ.indist(this.loc,0.1)){
+						var p = this.path.shift();
+						this.targ.shift(p.x,p.y);
+					}
+					//console.log(this.path);
+				//if (this.path.length > 0)
+				if (this.targ.isdist(this.loc,1))
+					this.move(d);
+				*/
+				this.attackdelay.update(d);
+				var t = this.attacktarget;
+				if (t !== -1 && t.loc.inmdist(this.loc,this.attrange)
+					&& this.attackdelay.consume()){
+						t.damage(1, this);
+						this.attackdelay.start();
+				}
+				/*if (this.loc.dist(Trpg.player.loc) > Trpg.board.viewsize)
+				//	return;
+				/*if (this.targ.dist(this.loc) == 0 && this.path.length > 0){
+					var dir = this.path.shift();
+					this.targ.shift(dir.x,dir.y);
+				}
+				if (this.path.length > 0)
+				//if (this.loc.dist(this.targ) > 0)// || (Math.abs(this.mx-16) > 2 || Math.abs(this.my-16) > 2))
+					this.move(d);
+				else if (Math.random()<.5*d)*
+				//if (this.path.length == 0 || this.path == "failed")// && Math.random()<.5*d)
+				//	this.pickwander();
+				//if (this.path == "failed")
+				//	return;
+				if (this.targ.dist(this.loc)==0 && this.path.length > 0){
+					if (this.path !== "failed"){
+						var p = this.path.shift();
+						this.targ.shift(p.x,p.y);
+					} else return;
+					this.pickwander();
+				//}
+				if (this.path.length > 0)
+					this.move(d);
+				//	this.targ.shift()
+				//this.targ = this.loc.copy().shift
+				*/
+			}
+			this.move = function(d){
+				//var a = Math.atan2(this.loc.dy(this.targ)*32+16-this.my,this.loc.dx(this.targ)*32+16-this.mx);
+				var a = Math.atan2(this.loc.mdy(this.targ)*32,this.loc.mdx(this.targ)*32);
+				//this.mx+=Math.cos(a)*70*d;
+				//this.my+=Math.sin(a)*70*d;
+				//this.type = a;
+				this.loc.move(Math.cos(a)*this.speed*d,Math.sin(a)*this.speed*d);
+				/*
+				//if (this.loc.dist(this.targ) == 0)	return;
+				var loc = this.loc.copy();
+				if (this.mx < 0 || this.mx >= 32){
+					loc.cx+=Math.sign(Math.cos(a));
+					loc.legalize();
+					if (!Trpg.board.getTile(loc).getTrait("walkable")){
+						loc.cx-=Math.sign(Math.cos(a));
+						loc.legalize();
+						this.targ.load(loc);
+						this.mx-=Math.cos(a)*70*d;
+					} else {
+						this.mx-=32*Math.sign(Math.cos(a));
+					}
+				}
+				if (this.my < 0 || this.my >= 32){
+					loc.cy+=Math.sign(Math.sin(a));
+					loc.legalize();
+					if (!Trpg.board.getTile(loc).getTrait("walkable")){
+						loc.cy-=Math.sign(Math.sin(a));
+						loc.legalize();
+						this.targ.load(loc);
+						this.my-=Math.sin(a)*70*d;
+					} else {
+						this.my-=32*Math.sign(Math.sin(a));
+					}
+				}
+				loc.legalize();
+				this.loc.load(loc);*/
+				//Trpg.board.aim = this.loc;
+			}
+			this.inrender = function(g){
+				try {
+					g.drawImage(Ast.i(this.type.toLowerCase()),0,0);
+				} catch(e) {
 					g.fillStyle = "black";
 					Drw.drawCText(g,this.type,16,16);
 				}
-				this.render = function(g){
-					if (this.hp <= 0 && this.attackable)
-						return;
-					g.save();
-					g.translate(Trpg.player.loc.mdx(this.loc)*32,Trpg.player.loc.mdy(this.loc)*32);
-					//if (this.loc.dist(Trpg.player.loc)>Trpg.board.viewsize)return;
-					//var x = /*this.mx/*-Trpg.player.loc.mx*/Trpg.player.loc.mdx(this.loc)*32;
-					//var y = /*this.my/*-Trpg.player.loc.my*/Trpg.player.loc.mdy(this.loc)*32;
-					this.inrender(g);
-					if (this.hp < this.maxhp){
-						var m = 20*this.hp/this.maxhp;
-						g.fillStyle = "green";
-						g.fillRect(6,-8,m,5)
-						g.fillStyle = "red";
-						g.fillRect(6+m,-8,20-m,5)
-					}
-					//console.log(Trpg.player.loc.mdist(Trpg.board.aim));
-				//	console.log(this.loc.toStr());
-					if (Trpg.player.target == this){
-						g.strokeStyle = "yellow";
-						if (!Trpg.player.loc.inmdist(this.loc,Trpg.player.attrange))
-							g.strokeStyle = "grey";
-						g.strokeRect(0,0,32,32);
-					}
-					if (hasaction() && getaction().owner == this)
-						getaction().renderp(g);
-					if (this.saying == ""){
-						g.restore();
-						return;
-					}
-					g.translate(16,0);
-					var w = g.measureText(this.saying).width+5;
-					var h = g.measureText("M").width+5;
-					g.fillStyle = "white";
-					g.globalAlpha = .5;
-					g.fillRect(-w/2,-h/2,w,h);
-					g.globalAlpha = 1;
-					g.fillStyle = "black";
-					Drw.drawCText(g,this.saying,0,0);
+			}
+			this.render = function(g){
+				if (this.hp <= 0 && this.attackable)
+					return;
+				g.save();
+				g.translate(Trpg.player.loc.mdx(this.loc)*32,Trpg.player.loc.mdy(this.loc)*32);
+				//if (this.loc.dist(Trpg.player.loc)>Trpg.board.viewsize)return;
+				//var x = /*this.mx/*-Trpg.player.loc.mx*/Trpg.player.loc.mdx(this.loc)*32;
+				//var y = /*this.my/*-Trpg.player.loc.my*/Trpg.player.loc.mdy(this.loc)*32;
+				this.inrender(g);
+				if (this.hp < this.maxhp){
+					var m = 20*this.hp/this.maxhp;
+					g.fillStyle = "green";
+					g.fillRect(6,-8,m,5)
+					g.fillStyle = "red";
+					g.fillRect(6+m,-8,20-m,5)
+				}
+				//console.log(Trpg.player.loc.mdist(Trpg.board.aim));
+			//	console.log(this.loc.toStr());
+				if (Trpg.player.target == this){
+					g.strokeStyle = "yellow";
+					if (!Trpg.player.loc.inmdist(this.loc,Trpg.player.attrange))
+						g.strokeStyle = "grey";
+					g.strokeRect(0,0,32,32);
+				}
+				if (hasaction() && getaction().owner == this)
+					getaction().renderp(g);
+				if (this.saying == ""){
 					g.restore();
+					return;
 				}
+				g.translate(16,0);
+				var w = g.measureText(this.saying).width+5;
+				var h = g.measureText("M").width+5;
+				g.fillStyle = "white";
+				g.globalAlpha = .5;
+				g.fillRect(-w/2,-h/2,w,h);
+				g.globalAlpha = 1;
+				g.fillStyle = "black";
+				Drw.drawCText(g,this.saying,0,0);
+				g.restore();
 			}
-			var ents = {
-				Blank:function(){
-					this.type = "Blank";
-					return this;
-				},
-				Man:function(){
-					this.type = "Man";
-					this.cb = 2;
-					this.maxhp = this.hp = 7;
-					this.actions.unshift("pickpocket");
-					this.pickpocket = function(){
-						startaction(function(){
-							Trpg.invent.additem(new Trpg.Item("Coins"),Math.round(Math.random()*2+1));
-						},this,.7)
-					}
-					return this;
-				},
-				Woman:function(){
-					ents.Man.call(this);
-					this.type = "Woman";
-					return this;
-				},
-				Lumberjack:function(){
-					
-				},
-				Banker:function(){
-					
-				},
-				ExchangeClerk:function(){
-					
-				},
-				Artisan:function(){
-					
-				},
-				MasterThief:function(){
-					
-				},
-				Thief:function(){
-					
-				},
-				HeadMiner:function(){
-					
-				},
-				Miner:function(){
-					
-				},
-				Goblin:function(){
-					this.type = "Goblin";
-					this.cb = 5;
-					this.maxhp = this.hp = 6;
-					this.range = 10;
-					this.examine = function(){
-						this.say("A goblin wandering around aimlessly");//+(this.cb>0?" (lvl "+this.cb+")":""));
-					}
-					return this;
-				},
-				Guard:function(){
-					this.type = "Guard";
-					this.cb = 16;
-					this.range = 3;
-					this.maxhp = this.hp = 25;
-					this.actions.unshift("pickpocket");
-					this.pickpocket = function(){
-						startaction(function(){
-							Trpg.invent.additem(new Trpg.Item("Coins"),Math.round(Math.random()*5+10));
-						},this,.7)
-					}
-					this.examine = function(){
-						this.say("A city guard patrolling the area");//+(this.cb>0?" (lvl "+this.cb+")":""));
-					}
-					this.inrender = function(g){
-						g.drawImage(Ast.i("guard"),0,0);
-					}
-					return this;
-				},
-				GuardCaptain:function(){
-					
-				},
-				Cow:function(){
-					this.type = "Cow";
-					this.cb = 2;
-					this.maxhp = this.hp = 8;
-					//this.actions.unshift("attack");
-					this.ondeath = function(){
-						Trpg.board.ground.dropitem(new Trpg.Item("Bones"),this.loc);
-					}
-					this.examine = function(){
-						this.say("A harmless cow munching at the grass");//+(this.cb>0?" (lvl "+this.cb+")":""));
-					}
-					this.inrender = function(g){
-						g.drawImage(Ast.i("cow"),0,0);
-					}
-					return this;
-				}
-			}
-			return ents[type].apply(new Default(wl.copy()));
 		}
+		Combatable.prototype = new Entity();
+		function Combatable(){
+			this.init = function(wl){
+				Combatable.prototype.init.call(this,wl);
+				this.respawndelay = 5;
+				this.actions.attack = function(){
+					cancelaction();
+					Trpg.player.attack(this);
+				}
+				this.cb = 0;
+				this.maxhp = this.hp = 0;
+				//this.attackable = true;
+				this.attackedby = [];
+				this.attackdelay = new Utils.Timer(1).start(true);
+				this.attrange = 1;
+			}
+			/*this.update = function(d){
+				Combatable.prototype.update.call(this,d);
+			}*/
+			this.getactions = function(){
+				var actions = this.actionslist.slice();
+				if (this.cb >= 10)
+					actions.push("attack");
+				else actions.unshift("attack");
+				return actions;
+			}
+		}
+		this.Man = function(wl){
+			this.init(wl);
+			this.type = "Man";
+			this.cb = 2;
+			this.maxhp = this.hp = 7;
+			this.ondeath = function(){
+				Trpg.board.ground.dropitem(new Trpg.Item("Bones"),this.loc);
+				var coins = new Trpg.Item("Coins");
+				coins.amt = Math.round(Math.random()*2+3);
+				Trpg.board.ground.dropitem(coins,this.loc);
+			}
+			this.actionslist.unshift("pickpocket");
+			this.actions.examine = function(){
+				Trpg.Console.add("An average citizen walking around");
+			}
+			this.actions.pickpocket = function(){
+				startaction(function(){
+					Trpg.invent.additem(new Trpg.Item("Coins"),Math.round(Math.random()*2+1));
+				},this,.7)
+			}
+		}
+		this.Cow = function(wl){
+			this.init(wl);
+			this.type = "Cow";
+			this.cb = 2;
+			this.maxhp = this.hp = 8;
+			this.ondeath = function(){
+				Trpg.board.ground.dropitem(new Trpg.Item("Bones"),this.loc);
+			}
+			this.actions.examine = function(){
+				Trpg.Console.add("A harmless cow munching at the grass");
+			}
+		}
+		this.Guard = function(wl){
+			this.init(wl);
+			this.type = "Guard";
+			this.cb = 16;
+			this.range = 3;
+			this.maxhp = this.hp = 25;
+			this.actionslist.unshift("pickpocket");
+			this.actions.pickpocket = function(){
+				startaction(function(){
+					Trpg.invent.additem(new Trpg.Item("Coins"),Math.round(Math.random()*5+10));
+				},this,.7)
+			}
+			this.actions.examine = function(){
+				Trpg.Console.add("A city guard patrolling the area");
+			}
+		}
+		this.Player = function(wl,username){
+			this.init.call(this,wl);
+			this.type = "Player";
+			this.username = username;
+			this.cb = 3;
+			this.maxhp = this.hp = 10;
+			this.speed = 100;
+			//this.attackdelay.dur = .7;
+			this.respawndelay = 1;
+			this.gettitle = function(){
+				return this.username;
+			}
+			this.loc.onmove = function(wl){//:new Trpg.WorldLoc(-1,1,3,3,"surface",16,16).sets({
+				//onmove:function(wl){
+					Trpg.board.getTile(wl).doaction("walkon");
+					if (!Trpg.board.getTile(wl).traits.walkable)
+						return false;
+					cancelaction();
+					if (wl.cx<1||wl.cx>6||wl.cy<1||wl.cy>6)
+						Trpg.board.load(wl);
+					return true;
+				}
+			this.onspawn = function(){
+				Trpg.Entities.Player.prototype.onspawn.call(this);
+				Trpg.board.load(this.loc);
+				this.changestate("");
+			}
+			this.update = function(d){
+				var dx = 0;
+				var dy = 0;
+				
+				if (K.Keys.W.down || K.Keys.up.down)	dy--;
+				if (K.Keys.A.down || K.Keys.left.down)	dx--;
+				if (K.Keys.S.down || K.Keys.down.down)	dy++;
+				if (K.Keys.D.down || K.Keys.right.down)	dx++;
+				if (Trpg.joystick){
+					dx = Trpg.joystick.dx();
+					dy = Trpg.joystick.dy();
+				}
+				var speed = this.speed*d;
+				if (!Trpg.board.textinp.hasfocus())
+					this.loc.move(dx*speed,dy*speed);
+				if (dx!== 0 || dy!==0)
+					this.target = -1;//(this.loc.copy());
+				Trpg.Entities.Player.prototype.update.call(this,d);
+			}
+			/*online:true,
+			attackable:true,
+			hasprivilege:function(priv){
+				return this.privileges.indexOf(priv) !== -1;
+			},*/
+		}
+		for (var p in this)
+			this[p].prototype = new Entity();
+		["Man","Cow","Guard","Player"].forEach((p)=>{
+			this[p].prototype = new Combatable();
+		});
+		/*
+		Actionable
+			Entity
+				Combatable
+					-Man
+					-Guard
+					-Cow
+				-Guide
+				-Banker
+				-Merchant
+		*/
 		this.getents = function(wl){
 			var ents = [];
 			for (var i = 0; i < this.entities.length; i++)
@@ -4269,6 +4479,12 @@ function TileRpgFramework(){
 			return ents;
 		}
 		this.entities = [];//new this.Entity("Guard",new Trpg.WorldLoc(0,1,3,3))];
+		this.add = function(ent){
+			this.entities.push(ent);
+		}
+		this.remove = function(ent){
+			this.entities.splice(this.entities.indexOf(ent),1);
+		}
 		this.update = function(d){
 			for (var i = 0; i < this.entities.length; i++)
 				if (this.entities[i].loc.indist(Trpg.player.loc,Trpg.board.viewsize))
@@ -4624,9 +4840,12 @@ function TileRpgFramework(){
 						g:function(){return new Trpg.Tile("Grass")},
 						u:function(){return new Trpg.Tile("LadderUp").setground("stone")},
 						d:function(){return new Trpg.Tile("LadderDown").setground("stone")},
-						c:function(wl){Trpg.Entities.entities.push(new Trpg.Entities.Entity("Man",wl));return false;},
+						m:function(wl){Trpg.Entities.entities.push(new Trpg.Entities.Man(wl));return false;},
+						q:function(wl){Trpg.Entities.entities.push(new Trpg.Entities.Guard(wl));return false;},
+						c:function(wl){Trpg.Entities.entities.push(new Trpg.Entities.Cow(wl));return false;},
+						/*m:function(wl){Trpg.Entities.entities.push(new Trpg.Entities.Entity("Man",wl));return false;},
 						q:function(wl){Trpg.Entities.entities.push(new Trpg.Entities.Entity("Guard",wl));return false;},
-						//a:function(wl){Trpg.Entities.entities.push(new Trpg.Entities.Entity("Goblin",wl));return false;},
+						c:function(wl){Trpg.Entities.entities.push(new Trpg.Entities.Entity("Cow",wl));return false;},*/
 					}
 					/*this.special = function(t,x,y){
 						switch (t){
@@ -4667,9 +4886,9 @@ function TileRpgFramework(){
 						"wssssssssssssssssssssssw",
 						"wsssswwggggggggggwwssssw",
 						"wsssswggggggggggggwssssw",
-						"wssssggc_________ggssssw",
-						"wssssgg__________ggssssw",
-						"wssssgg_________cggssssw",
+						"wssssggm_________ggssssw",
+						"wssssgg____c_____ggssssw",
+						"wssssgg_________mggssssw",
 						"wssssgg_c________ggssssw",
 						"wsssswggggggggggggwssssw",
 						"wsssswwggggggggggwwssssw",
@@ -4785,6 +5004,7 @@ function TileRpgFramework(){
 			this.type = "default";
 			this.board = true;
 			this.state = {};
+			this.highlighted = false;
 			this.traits = {};
 			this.getcolor = function(){	return this.avecolor || "black"}
 			this.getTrait = function(trait){
@@ -4818,6 +5038,9 @@ function TileRpgFramework(){
 				return this.setground(this.getdefground(wl));
 			}
 			this.actions = [];
+			this.walk = function(){
+				Trpg.player.settarget({loc:Trpg.board.aim});
+			}
 			this.getActions = function(){return this.actions;}
 			this.fillmenu = function(menu){
 				//menu.removeall();
@@ -4906,7 +5129,7 @@ function TileRpgFramework(){
 			},
 			Grass:function(){
 				this.type = "Grass";
-				this.actions = ["dig"];
+				this.actions = ["walk","dig"];
 				this.avecolor = "#90D747";
 				this.traits.burnable = true;
 				this.traits.walkable = true;
@@ -6567,6 +6790,7 @@ function TileRpgFramework(){
 			},
 			Floor:function(type){
 				this.type = type;
+				this.actions = ["walk"];
 				this.avecolor = "#8A8A8A";
 				this.traits.walkable = true;
 				this.render = function(g){
@@ -6717,7 +6941,10 @@ function TileRpgFramework(){
 			RuneOre:function(){	return tiles.Ore.call(this,"Rune","#000000");	},
 			EterniumOre:function(){	return tiles.Ore.call(this,"Eternium","#CAE4B7");	},//}
 		}
-		return tiles[type].apply(new Default());
+		var t = tiles[type].apply(new Default());
+		if (t.actions.indexOf("walk")==-1 && t.traits.walkable)
+			t.actions.splice(1,0,"walk");
+		return t;
 	}
 	this.Chunk = function(x,y,d){
 		this.wl = new Trpg.WorldLoc(x,y,0,0,d);
@@ -6864,7 +7091,9 @@ function TileRpgFramework(){
 					
 					if (Trpg.player.loc.indist(wl,Trpg.board.viewsize))
 						this.tiles[i][j].render(g);
-					
+					g.fillStyle = "red";
+					if(this.tiles[i][j].highlighted)
+						g.fillRect(8,8,24,24);
 					//if (Trpg.board.onboard && Trpg.board.aim!=-1 && exists(Trpg.board.aim))
 					//	if (Trpg.board.aim.indist(wl,0))
 					//		g.strokeRect(0,0,32,32);

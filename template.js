@@ -37,6 +37,11 @@ function init(){
 	U.color="black";
 	//U.camera.centerZero();
 	UU.add(U);
+	window.onresize = function(){
+		M.canvas.width = UU.w = window.innerWidth;
+		M.canvas.height = UU.h = window.innerHeight;
+		U.container.stretchfit(U);
+	}
 	var lasttime=Date.now()/1000;
 	var adt = 0;
 	M.setLoop(function(){
@@ -45,7 +50,7 @@ function init(){
 		var dt=before-lasttime;
 		lasttime=before;
 		adt+=dt;
-		var t = 1/50;
+		var t = 1/25;
 		if (adt < t)	return;
 		while (adt >= t){
 			adt-=t;
@@ -80,6 +85,7 @@ function assetsbit(){
 	//{entities
 	Ast.loadImage("cow","Cow.png");
 	Ast.loadImage("guard","Guard.png");
+	Ast.loadImage("man","Man.png");
 	//}
 	//{misc
 	Ast.loadImage("hole","Hole.png");
@@ -204,7 +210,7 @@ function assetsbit(){
 	Ast.loadImage("ploweddirt","PlowedDirt.png");//}
 	//{player
 	Ast.loadImage("playerN","PlayerN.png");
-	Ast.loadImage("playerS","PlayerS.png");
+	Ast.loadImage("player","PlayerS.png");
 	Ast.loadImage("playerE","PlayerE.png");
 	Ast.loadImage("playerW","PlayerW.png");//}
 	

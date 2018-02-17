@@ -37,6 +37,12 @@ function DrawingFramework(){
 		var lines = [];
 		for (var i = 0; i < words.length; i++)
 			if (g.measureText(seg+words[i]).width>w*.9){
+				if (g.measureText(words[i]).width > w*.9){
+					var word1 = words[i].substring(0,words[i].length/2);
+					seg = words[i].substring(words[i].length/2)+" ";
+					lines.push(word1);
+					continue;
+				}
 				lines.push(seg);
 				seg = words[i]+" ";
 			} else if (words[i].indexOf("\n")!==-1) {
