@@ -190,8 +190,8 @@ function TileRpgFramework(){
 		Trpg.Home = H;
 		H.empty();
 		if (Trpg.ismobile){
-			MobilePopulate();
-			return;
+			//MobilePopulate();
+			//return;
 		}
 		H.bcolor = "black";
 		H.color = "grey";
