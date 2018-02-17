@@ -1,7 +1,7 @@
 function TileRpgFramework(){
 	this.frameworkName = "TileRpgFramework";
 	var Trpg = this;
-	this.ismobile = window.mobilecheck();
+	this.ismobile = false;//window.mobilecheck();
 	//this.adminpriv = false;
 	this.WorldLoc = function(wx, wy, cx, cy, dim, mx, my){
 		this.wx = wx || 0;
@@ -190,8 +190,8 @@ function TileRpgFramework(){
 		Trpg.Home = H;
 		H.empty();
 		if (Trpg.ismobile){
-			//MobilePopulate();
-			//return;
+			MobilePopulate();
+			return;
 		}
 		H.bcolor = "black";
 		H.color = "grey";
