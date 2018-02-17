@@ -2391,7 +2391,7 @@ function TileRpgFramework(){
 						this.over = "map";
 				},
 				mousedown:function(e,m){
-					
+					this.mousemove(e,m);
 					if (!exists(this.container.menu))	return;
 					//console.log(this.tile.getmenu());
 					//if (this.container.menu.hidden)
