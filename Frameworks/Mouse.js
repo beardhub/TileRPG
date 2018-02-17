@@ -145,13 +145,20 @@ function MouseFramework(){
 			// initMouseEvent(type, canBubble, cancelable, view, clickCount, 
 			//                screenX, screenY, clientX, clientY, ctrlKey, 
 			//                altKey, shiftKey, metaKey, button, relatedTarget);
-
+			//console.log(event.type);
+			if (type == "mousedown"){
+				var simulatedEvent = document.createEvent("MouseEvent");
+				simulatedEvent.initMouseEvent("mousemove", true, true, window, 1, 
+											  first.screenX, first.screenY, 
+											  first.clientX, first.clientY, false, 
+											  false, false, false, 0/*left*/, null);
+				first.target.dispatchEvent(simulatedEvent);
+			}
 			var simulatedEvent = document.createEvent("MouseEvent");
 			simulatedEvent.initMouseEvent(type, true, true, window, 1, 
 										  first.screenX, first.screenY, 
 										  first.clientX, first.clientY, false, 
 										  false, false, false, 0/*left*/, null);
-
 			first.target.dispatchEvent(simulatedEvent);
 			event.preventDefault();
 		}

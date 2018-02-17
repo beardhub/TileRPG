@@ -249,12 +249,29 @@ function UtilsFramework(){
 			if (this.progress()>=1||this.progress()<0)
 				return; else{
 				g.save();
-				g.globalAlpha = .35;
-				g.fillStyle = "white";
+				//var w = 16-this.progress()*16;
+				//g.globalAlpha = .35;
+				//g.fillStyle = "red";
+				//var p = new Path2D();
 				g.beginPath();
+				//p.rect(-20,-20,42,42);
+				//p.moveTo(0,0);
+				//p.closePath();
+				//g.clip();
+				//g.fillRect(16-w/2,16-w/2,w,w);
+				//g.strokeStyle = "blue";
+				//g.strokeRect(0,0,32,32);
+				//g.beginPath();
+				//g.moveTo(16,8);
 				g.lineTo(16,16);
-				g.arc(16,16,8,-Math.PI/2,2*Math.PI*(-.25+this.progress()));
-				g.fill();
+				g.arc(16,16,8,-Math.PI/2,2*Math.PI*(this.progress()));
+				//g.lineTo(16,16);
+				g.fillStyle = "white";
+				//g.strokeStyle = "red";
+				g.globalAlpha = .35;
+				//g.closePath();
+				g.fill();//*/
+				//g.addPath(p);
 				g.restore();
 			}
 		}

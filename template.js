@@ -65,8 +65,16 @@ function init(){
 
 		}
 		var g=M.canvas.getContext("2d");
+		g.mozImageSmoothingEnabled = false;
+		g.webkitImageSmoothingEnabled = false;
+		g.msImageSmoothingEnabled = false;
+		g.imageSmoothingEnabled = false;
 		g.clearRect(0,0,M.canvas.width,M.canvas.height);
 		UU.render(g);
+		if (Trpgdebugger.showmouse){
+			g.fillStyle = "white";
+			g.fillRect(Ms.x()-5,Ms.y()-5,10,10);
+		}
 		//UU.update(dt);
 		
 	});
