@@ -2,7 +2,7 @@ function TileRpgFramework(){
 	this.frameworkName = "TileRpgFramework";
 	//var Trpg = this;
 	this.ismobile = false;//window.mobilecheck();
-	window.mobile = true || window.mobilecheck();
+	window.mobile = window.mobilecheck();
 	makeShortcut({
 		showmouse:false,
 		showentitypaths:false,
@@ -236,8 +236,8 @@ function TileRpgFramework(){
 					Drw.drawCText(g, "TileRPG", 600,200);
 				}
 			})());
-			t.add(new UI.Button(500,300,200,50).sets({color:"green",text:"New Game",key:"n",onclick:function(){StartGame(true);}}));
-			t.add(new UI.Button(500,400,200,50).sets({color:"blue",text:"Load Game",key:"l",onclick:function(){StartGame(false);}}));
+			t.add(new UI.Button(500,300,200,50).sets({color:"green",text:"Start Game",key:"n",onclick:function(){StartGame(true);}}));
+			//t.add(new UI.Button(500,400,200,50).sets({color:"blue",text:"Load Game",key:"l",onclick:function(){StartGame(false);}}));
 			//t.add(new UI.Button(500,500,200,50).sets({color:"purple",text:"Multiplayer",key:"m",onclick:function(){
 			//	H.newtab("MultiplayerLogin", MultiplayerLogin());H.settab("MultiplayerLogin");}}));
 			/*t.add(new UI.Button(500,500,200,50).sets({color:"red",text:"Instructions",onclick:function(){
@@ -499,7 +499,7 @@ function TileRpgFramework(){
 			//M.camera.zoom(2);
 			i.color = "rgb(96,96,96)";
 			b.bcolor = b.color = /*h.color = h.bcolor = i.bcolor =*/ m.color = "black";
-			b.color = "white";
+			//b.color = "white";
 			m.add(Trpg.Map);
 			
 			return g;
