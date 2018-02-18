@@ -2,7 +2,7 @@ function TileRpgFramework(){
 	this.frameworkName = "TileRpgFramework";
 	//var Trpg = this;
 	this.ismobile = false;//window.mobilecheck();
-	window.mobile = window.mobilecheck();
+	window.mobile = true || window.mobilecheck();
 	makeShortcut({
 		showmouse:false,
 		showentitypaths:false,
@@ -495,6 +495,7 @@ function TileRpgFramework(){
 			g.add(M = new UI.DBox(),"Menus");
 			g.add(makeShortcut(new UI.DBox(),"Timers"),"Timers");
 			M.font = "20px Arial";
+			if(window.mobile)	M.camera.zoom(1.5);
 			//M.camera.zoom(2);
 			i.color = "rgb(96,96,96)";
 			b.bcolor = b.color = /*h.color = h.bcolor = i.bcolor =*/ m.color = "black";

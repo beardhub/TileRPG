@@ -51,11 +51,11 @@ function init(){
 		lasttime=before;
 		adt+=dt;
 		var t = 1/25;
-		if (adt < t)	return;
+		//if (adt < t)	return;
 		while (adt >= t){
 			adt-=t;
 			UU.update(t);
-			if (adt>.5){
+			if (false && adt>.5){
 				UU.update(.5);
 				adt = 0;
 				//adt-=5;
