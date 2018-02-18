@@ -263,8 +263,9 @@ function UtilsFramework(){
 				//g.strokeRect(0,0,32,32);
 				//g.beginPath();
 				//g.moveTo(16,8);
+				//g.lineTo(16,0);
 				g.lineTo(16,16);
-				g.arc(16,16,8,-Math.PI/2,2*Math.PI*(this.progress()));
+				g.arc(16,16,8,-Math.PI/2,2*Math.PI*(-.2+this.progress()));
 				//g.lineTo(16,16);
 				g.fillStyle = "white";
 				//g.strokeStyle = "red";
