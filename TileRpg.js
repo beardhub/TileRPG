@@ -70,6 +70,7 @@ function TileRpgFramework(){
 					this.my-=32*Math.sign(my);
 				} else this.my-=my;
 			}
+			return this;
 		}
 		this.shift = function(dx,dy,dim){
 			this.cx+=dx||0;
@@ -2255,7 +2256,7 @@ function TileRpgFramework(){
 		holder.menu.close();
 		holder.add(holder.menu,"menu");
 		holder.text = "";
-		holder.leftclick = !window.mobile;
+		holder.rightclick = true;//!window.mobile;
 		holder.add({
 			rl:-1,//x:0,y:0,
 			init:function(){
@@ -2441,7 +2442,7 @@ function TileRpgFramework(){
 					//console.log(this.tile.getmenu());
 					//if (this.container.menu.hidden)
 					//	this.container.setmenu(this.tile.getmenu());
-					if (e.button == 0 && this.container.leftclick){
+					if (e.button == 0 && this.container.rightclick){
 					//(!window.mobile 
 					//	|| (this.container.menu.has("item0") && this.container.menu.get("item0").text.indexOf("Walk")!==-1))){
 						//if (Trpg.invent.using != -1){
@@ -2505,7 +2506,7 @@ function TileRpgFramework(){
 										return Trpg.Home.get("Gameplay").remove("currentaction");*/
 						this.tile.doaction();
 							//this.container.menu.get("item0").onclick.call
-					} else if (e.button == 2 || !this.container.leftclick){// || window.mobileCheck()){
+					} else if (e.button == 2 || !this.container.rightclick){// || window.mobileCheck()){
 						//if (!holder.menu.hidden)return;
 //if (this.tile !== "empty")
 					//		this.tile.fillmenu(holder.menu);
@@ -2754,10 +2755,10 @@ function TileRpgFramework(){
 		
 		return holder;
 		holder.add(menu);
-		holder.add(new UI.Button(0,0,0,35).sets({alphamod:1}),"leftclick")
+		holder.add(new UI.Button(0,0,0,35).sets({alphamod:1}),"rightclick")
 		holder.add({
 			rl:-1,
-			btn:holder.get("leftclick"),
+			btn:holder.get("rightclick"),
 			mousemove:function(e,m){
 				if (!Trpg.Home.get("Gameplay.Board").mouseonbox(m))	return;
 				this.btn.x = holder.boxx(m.x)-15;
@@ -2830,7 +2831,7 @@ function TileRpgFramework(){
 					},actions[i]);
 				}
 				menu.moveto(menu.container.boxx(m.x)-15,menu.container.boxy(m.y)-15);
-				holder.get("leftclick").hidden = true;
+				holder.get("rightclick").hidden = true;
 				menu.open();
 			}
 		})
@@ -3290,13 +3291,14 @@ function TileRpgFramework(){
 			},"sightline");
 			if (true || window.mobile){
 				this.container.container.add(new UI.Button(this.container.x+5,this.container.y+this.container.h-200-5,100,100).sets({
-					leftclick:false,onclick:function(){
-						Trpg.toolbox.leftclick = !Trpg.toolbox.leftclick;
+					//rightclick:false,
+					onclick:function(){
+						Trpg.toolbox.rightclick = !Trpg.toolbox.rightclick;
 					},inrender:function(g){
 						g.fillStyle = "black";
 						g.font = "25px Arial";
-						Drw.drawCText(g,"Toggle",this.w/2,this.h/3);
-						Drw.drawCText(g,"Leftclick",this.w/2,this.h/3*2);
+						Drw.drawCText(g,"Right",this.w/2,this.h/3);
+						Drw.drawCText(g,"Click "+(!Trpg.toolbox.rightclick?"on":"off"),this.w/2,this.h/3*2);
 					}
 				}));
 				this.container.container.add(new UI.Button(this.container.x+5,this.container.y+this.container.h-100-5,100,100).sets({
@@ -4017,15 +4019,19 @@ function TileRpgFramework(){
 			if (Trpg.board.getTile(wl).traits.walkable)
 				return true;
 			this.blocked = true;
-			return false;
+			return true;
 		}
 		for(var i = 0; i < (maxdist || 32*Trpg.board.viewsize) && !sight.blocked; i++){
 			sight.move(dx,dy);
 			traveled++;
+			if (sight.indist(end,0)){
+				sight.blocked = false;
+				break;
+			}
 		}
 		return {
 			end:sight.copy(),
-			reached:sight.blocked,
+			reached:!sight.blocked,
 			dist:traveled,
 			ang:a
 		}
@@ -4322,9 +4328,33 @@ function TileRpgFramework(){
 							+" "+this.type+(this.cb > 0?" (lvl "+this.cb+")":""));
 			}*/
 			this.movetotarget = function(d){
+				
+				/*var path = this.path.splice();
+				var next = this.loc.copy();
+				var sight;
+				while(path.length > 0){
+					var p = new Trpg.WorldLoc().loadStr(path.shift().wlstr);
+					var s = Lineofsight(this.loc,p);
+					if (s.reached)
+						sight = s;
+					else break;
+					//if (!sight.reached)
+					//	break;
+					//a = sight.ang;
+				}
+				console.log(sight);
+				var a = sight.ang;
+				this.loc.move(Math.cos(a)*this.speed*d,Math.sin(a)*this.speed*d);
+				return;*/
 				if (this.path.length > 0 && this.nexttile.indist(this.loc,0)){
+					//var acc = this.nexttile.copy();
+					//while(Lineofsight(this.loc,this.nexttile).reached && this.path.length > 0){
+					//if (this.type == "Player")	console.log(Lineofsight(this.loc,this.nexttile));
 					var p = this.path.shift().dir;
+					//acc = this.nexttile.copy();
 					this.nexttile.shift(p.x,p.y);
+					//}
+					//this.nexttile = acc;
 					this.nexttile.mx = this.nexttile.my = 16;	
 				}
 				if (this.path.length == 0 && this.target.loc.indist(this.loc,0))
@@ -4369,7 +4399,8 @@ function TileRpgFramework(){
 					if (this.target == -1 && Math.random()*5<d)
 						this.settarget({loc:this.spawn.copy().shift(
 							Math.floor(Math.random()*this.range*2)-this.range,
-							Math.floor(Math.random()*this.range*2)-this.range)});
+							Math.floor(Math.random()*this.range*2)-this.range)
+							.move((Math.random()-.5)*30,(Math.random()-.5)*30)});
 				}
 					if (this.target !== -1)// && !this.loc.inmdist(this.target.loc,.75))
 						this.movetotarget(d);
