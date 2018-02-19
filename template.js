@@ -55,7 +55,7 @@ function init(){
 		while (adt >= t){
 			adt-=t;
 			UU.update(t);
-			if (false && adt>.5){
+			if (adt>.5){
 				UU.update(.5);
 				adt = 0;
 				//adt-=5;
