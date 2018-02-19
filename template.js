@@ -37,14 +37,17 @@ function init(){
 	U.color="black";
 	//U.camera.centerZero();
 	UU.add(U);
-	window.onresize = function(){
+	/*window.onresize = function(){
 		M.canvas.width = UU.w = window.innerWidth;
 		M.canvas.height = UU.h = window.innerHeight;
 		U.container.stretchfit(U);
-	}
+	}*/
 	var lasttime=Date.now()/1000;
 	var adt = 0;
 	M.setLoop(function(){
+		/*M.canvas.width = UU.w = window.innerWidth;
+		M.canvas.height = UU.h = window.innerHeight;
+		U.container.stretchfit(U);*/
 		var before=Date.now()/1000;
 		//var before=window.performance.now()/1000;
 		var dt=before-lasttime;
