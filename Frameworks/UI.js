@@ -494,27 +494,26 @@ function UIFramework(){
 	this.DBox.prototype.mouseonbox = function(m){
 		if (!exists(this.container) || this.container == -1 || this.hidden || this.invisible)	return false;
 		return m.relx(this)>0&&m.relx(this)<this.w*this.container.cumZoom()&&m.rely(this)>0&&m.rely(this)<this.h*this.container.cumZoom();}
+	
+	
 	this.DBox.prototype.screenx = function(xx){
-		var x = (this.x + this.camera.relx(xx))//*this.camera.getzoom();
+		var x = this.x + this.camera.relx(xx);
 		if (typeof this.container !== "undefined" && this.container !== -1)
 			if (typeof this.container.screenx !== "undefined")
 				return this.container.screenx(x);
 			else return x;
 		else return x;}
-	//this.DBox.prototype.screenx = function(x){
-	//	x*camer.zoom+w/2
-	//}
-	//container coords -> screen takes an x and returns container.x+(x-camera.x+camera.w/2)/camera.scale
-	this.DBox.prototype.screeny = function(yy){
-		var y = this.y+this.camera.rely(yy);
-		return (this.container && this.container.screeny(y)) || y;
 		
-		var y = (this.y + this.camera.rely(yy));//*this.camera.getzoom();
+	this.DBox.prototype.screeny = function(yy){
+		var y = this.y + this.camera.rely(yy);
 		if (typeof this.container !== "undefined" && this.container !== -1)
 			if (typeof this.container.screeny !== "undefined")
 				return this.container.screeny(y);
 			else return y;
 		else return y;}
+		
+		
+		
 			//this.relx = function(x){
 			//	return (x*scale - this.x*scale + this.w/2);//*scale;
 			//}

@@ -3473,6 +3473,11 @@ function TileRpgFramework(){
 			
 			var x = m.relx(fakecam)/this.container.cumZoom()+Trpg.player.loc.mx-16;
 			var y = m.rely(fakecam)/this.container.cumZoom()+Trpg.player.loc.my-16;
+			
+			x = this.container.boxx(m.x)-this.container.camera.x;
+			y = this.container.boxy(m.y)-this.container.camera.y;
+			
+			
 			/*if (x > 64)		x = 64;
 			if (x < -64)	x = -64;
 			if (y > 64)		y = 64;
