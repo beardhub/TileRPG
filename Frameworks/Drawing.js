@@ -31,7 +31,7 @@ function DrawingFramework(){
 			g.restore();
 		}
 	}
-	this.drawBoxText = function(g, txt, x, y, w){
+	this.drawBoxText = function(g, txt, x, y, w, extras){
 		var words = txt.split(" ");
 		var seg = "";
 		var lines = [];
@@ -53,9 +53,10 @@ function DrawingFramework(){
 			}
 			lines.push(seg);
 		for (var i = 0; i < lines.length; i++)
-			that.drawCText(g,lines[i],x,y+i*g.measureText("M").width);
+			that.drawCText(g,lines[i],x,y+i*g.measureText("M").width,extras);
 	}
 	this.drawCText = function(g, txt, x, y, extras){
+		g.font = (extras && extras.font) || g.font;
 		var w = g.measureText(txt).width;
 		var h = g.measureText("M").width;
 		if (!exists(extras)){
@@ -63,7 +64,6 @@ function DrawingFramework(){
 			g.fillText(txt,x-w/2,y+h/2);
 			return;
 		}
-		g.font = extras.font || g.font;
 		var offx = 0;
 		var offy = 0;
 		if (extras.alignx){
@@ -81,8 +81,8 @@ function DrawingFramework(){
 		if (extras.boxcolor){
 			g.fillStyle = extras.boxcolor;
 			g.globalAlpha = extras.boxalpha || .6;
-			var bw = w+(extras.boxborder || 6);
-			var bh = h+(extras.boxborder || 6);
+			var bw = w+(extras.boxborder || 10);
+			var bh = h+(extras.boxborder || 10);
 			g.fillRect(x-bw/2+offx,y-bh/2+offy,bw,bh);
 		}
 		g.fillStyle = extras.textcolor || g.fillStyle;
