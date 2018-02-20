@@ -2,12 +2,10 @@ function TileRpgFramework(){
 	this.frameworkName = "TileRpgFramework";
 	//var Trpg = this;
 	this.ismobile = false;//window.mobilecheck();
-	window.mobile = window.mobilecheck();
-	makeShortcut({
+	this.debugger = {
 		showmouse:false,
 		showentitypaths:false,
-		
-	},"Trpgdebugger");
+	};
 	//this.adminpriv = false;
 	this.WorldLoc = function(wx, wy, cx, cy, dim, mx, my){
 		this.wx = wx || 0;
@@ -320,7 +318,7 @@ function TileRpgFramework(){
 			m.add(new UI.Button(500,700,200,50).sets({color:"darkgrey",text:"Back",key:"m",onclick:function(){
 				Trpg.socket.emit("gooffline");H.settab("TitleMenu");
 			}}));
-			//{login stuff
+			// {login stuff
 			Trpg.socket.on("failedlogin", function(){
 				alert("Login failed: incorrect username or password");
 			});
@@ -349,7 +347,7 @@ function TileRpgFramework(){
 			Trpg.socket.on("alreadyonline",function(){
 				alert("Login failed: that user is already logged in");
 			});
-			//}
+			// }
 			
 			Trpg.socket.on("playerjoined",function(p){
 				if (p.username !== Trpg.player.username)
@@ -1082,9 +1080,10 @@ function TileRpgFramework(){
 		var vals = str.split(" ");
 		var cmd = vals.shift();
 		var p = Trpg.player;
+		var multi = false;
 		switch (cmd){
 			case "give":
-				if (!p.hasprivilege("admin") && !p.hasprivilege("owner")){
+				if (multi && !p.hasprivilege("admin") && !p.hasprivilege("owner")){
 					alert("you need admin privileges for this command");
 					return;
 				}
@@ -1114,7 +1113,7 @@ function TileRpgFramework(){
 				Trpg.socket.emit("givepriv",{u:Trpg.player.username,p:["admin","owner"]});
 				return;
 			case "giveadmin":
-				if (!p.hasprivilege("owner")){
+				if (multi && !p.hasprivilege("owner")){
 					alert("you need owner privileges for this command");
 					return;
 				}
@@ -1128,7 +1127,7 @@ function TileRpgFramework(){
 					}
 				return;
 			case "removeadmin":
-				if (!p.hasprivilege("owner")){
+				if (multi && !p.hasprivilege("owner")){
 					alert("you need owner privileges for this command");
 					return;
 				}
@@ -1596,7 +1595,7 @@ function TileRpgFramework(){
 				}*/
 				return this;
 			},
-			//{ores
+			// {ores
 			Ore:function(type,alch){
 				this.type = type+"Ore";
 				this.alchvalue = alch;
@@ -1610,8 +1609,8 @@ function TileRpgFramework(){
 			AdamantOre:function(){return items.Ore.call(this,"Adamant",250)},
 			RuneOre:function(){return items.Ore.call(this,"Rune",2000)},
 			EterniumOre:function(){return items.Ore.call(this,"Eternium",9000)},
-			//}
-			//{bars
+			// }
+			// {bars
 			Bar:function(type,alch){
 				this.type = type+"Bar";
 				this.alchvalue = alch;
@@ -1666,8 +1665,8 @@ function TileRpgFramework(){
 			AdamantBar:function(){return items.Bar.call(this,"Adamant",375)},
 			RuneBar:function(){return items.Bar.call(this,"Rune",3000)},
 			EterniumBar:function(){return items.Bar.call(this,"Eternium",15000)},
-			//}
-			//{weapons
+			// }
+			// {weapons
 			Weapon:function(metal,type,alch){
 				this.type = metal+type;
 				this.alchvalue = alch;
@@ -1680,8 +1679,8 @@ function TileRpgFramework(){
 			AdamantDagger:function(){return items.Weapon.call(this,"Adamant","Dagger",items.AdamantBar().alchvalue*1);},
 			RuneDagger:function(){return items.Weapon.call(this,"Rune","Dagger",items.RuneBar().alchvalue*1);},
 			EterniumDagger:function(){return items.Weapon.call(this,"Eternium","Dagger",items.EterniumBar().alchvalue*1);},
-			//}
-			//{armor
+			// }
+			// {armor
 			Armor:function(metal,type,alch){
 				this.type = metal+type;
 				this.alchvalue = alch;
@@ -1716,7 +1715,7 @@ function TileRpgFramework(){
 			EterniumLegs:function(){return items.Weapon.call(this,"Eternium","Legs",items.EterniumBar().alchvalue*4);},
 			EterniumKite:function(){return items.Weapon.call(this,"Eternium","Kite",items.EterniumBar().alchvalue*3);},
 			DragonBody:function(){return items.Weapon.call(this,"Dragon","Body",75000);},
-			//}
+			// }
 			Ladder:function(){
 				this.type = "Ladder";
 				this.render = function(g,x,y){
@@ -2613,7 +2612,7 @@ function TileRpgFramework(){
 				texts = this.history;
 			}
 			g.font = "15px Arial";
-			for (var i = 0; i < texts.length && i < 10; i++)
+			for (var i = 0; i < texts.length && i < 8; i++)
 				Drw.drawCText(g,texts[texts.length-i-1].m,3,-18.5*i-4,
 					{alignx:"left",aligny:"bottom",boxcolor:texts[texts.length-i-1].c || "white",textcolor:"black"});
 		}
@@ -2716,7 +2715,7 @@ function TileRpgFramework(){
 		},"rightclick");
 		
 		return holder;
-		//{extra
+		// {extra
 		
 		holder.add({
 			//init:function(){
@@ -3150,7 +3149,7 @@ function TileRpgFramework(){
 				//Trpg.invent.using = -1;
 			}
 		})(),"toolclicker");
-		return box;//}
+		return box;// }
 	}*/
 	this.Board = function(){
 		this.chunkloaded = function(wl){
@@ -3290,7 +3289,7 @@ function TileRpgFramework(){
 				}
 			},"sightline");
 			if (true || window.mobile){
-				this.container.container.add(new UI.Button(this.container.x+5,this.container.y+this.container.h-200-5,100,100).sets({
+				this.container.container.add(new UI.Button(this.container.x+5,this.container.y+this.container.h/2-100-5,100,100).sets({
 					//rightclick:false,
 					onclick:function(){
 						Trpg.toolbox.rightclick = !Trpg.toolbox.rightclick;
@@ -3301,7 +3300,7 @@ function TileRpgFramework(){
 						Drw.drawCText(g,"Click "+(!Trpg.toolbox.rightclick?"on":"off"),this.w/2,this.h/3*2);
 					}
 				}));
-				this.container.container.add(new UI.Button(this.container.x+5,this.container.y+this.container.h-100-5,100,100).sets({
+				this.container.container.add(new UI.Button(this.container.x+5,this.container.y+this.container.h/2-5,100,100).sets({
 					zoomlvl:0,onclick:function(){
 						switch(this.zoomlvl+1){
 							case 0:
@@ -3318,6 +3317,25 @@ function TileRpgFramework(){
 						g.font = "25px Arial";
 						Drw.drawCText(g,"Toggle",this.w/2,this.h/3);
 						Drw.drawCText(g,"Zoom",this.w/2,this.h/3*2);
+					}
+				}));
+			}
+			if (window.mobile){
+				this.container.container.add(new UI.Button(this.container.x+this.container.w-100-5,this.container.y+this.container.h-100-5,100,100).sets({
+					//rightclick:false,
+					onclick:function(){
+						var text = prompt("Enter Text");
+						if (text == null)
+							return;
+						if (text.charAt(0) == "/")
+							command(text.substring(1));
+						else if (text !== "")
+							Trpg.player.say(text);
+					},inrender:function(g){
+						g.fillStyle = "black";
+						g.font = "25px Arial";
+						Drw.drawCText(g,"Enter",this.w/2,this.h/3);
+						Drw.drawCText(g,"Text "+(!Trpg.toolbox.rightclick?"on":"off"),this.w/2,this.h/3*2);
 					}
 				}));
 			}
@@ -4353,7 +4371,7 @@ function TileRpgFramework(){
 					var p = this.path.shift().dir;
 					//acc = this.nexttile.copy();
 					this.nexttile.shift(p.x,p.y);
-					//}
+					// }
 					//this.nexttile = acc;
 					this.nexttile.mx = this.nexttile.my = 16;	
 				}
@@ -4498,7 +4516,7 @@ function TileRpgFramework(){
 						this.targ.shift(p.x,p.y);
 					} else return;
 					this.pickwander();
-				//}
+				// }
 				if (this.path.length > 0)
 					this.move(d);
 				//	this.targ.shift()
@@ -5705,7 +5723,7 @@ function TileRpgFramework(){
 				//this.setdest = function(wl){
 				//	this.destwl = wl.copy();
 				//	return this;
-				//}
+				// }
 				this.doaction = function(action){
 					if (!exists(action))	action = this.getActions()[0];
 					var wl = this.wl;
@@ -5780,7 +5798,7 @@ function TileRpgFramework(){
 				//this.setdest = function(wl){
 				//	this.destwl = wl.copy();
 				//	return this;
-				//}
+				// }
 				this.doaction = function(action){
 					if (!exists(action))	action = this.getActions()[0];
 					var wl = this.wl;
@@ -7075,7 +7093,7 @@ function TileRpgFramework(){
 			Stone:function(){
 				return tiles.Floor.call(this,"Stone");
 			},
-			//{ores
+			// {ores
 			Ore:function(type,avecol){
 				this.type = type+"Ore";
 				this.actions = ["dig"];
@@ -7213,7 +7231,7 @@ function TileRpgFramework(){
 			MithrilOre:function(){	return tiles.Ore.call(this,"Mithril","#000000");	},
 			AdamantOre:function(){	return tiles.Ore.call(this,"Adamant","#000000");	},
 			RuneOre:function(){	return tiles.Ore.call(this,"Rune","#000000");	},
-			EterniumOre:function(){	return tiles.Ore.call(this,"Eternium","#CAE4B7");	},//}
+			EterniumOre:function(){	return tiles.Ore.call(this,"Eternium","#CAE4B7");	},// }
 		}
 		var t = tiles[type].apply(new Default());
 		if (t.actions.indexOf("walk")==-1 && t.traits.walkable)
@@ -7388,7 +7406,7 @@ function TileRpgFramework(){
 					//g.globalAlpha = .5;
 					for (var e = 0; e < Trpg.Entities.entities.length; e++){
 						var ent = Trpg.Entities.entities[e];
-						if (ent == Trpg.player || Trpgdebugger.showentitypaths){
+						if (ent == Trpg.player || Trpg.debugger.showentitypaths){
 						if (tile.wl.toStr() == ent.nexttile.toStr()){
 							if (ent.path.length > 0)
 								g.fillRect(13,13,6,6);

@@ -74,7 +74,7 @@ function init(){
 		g.imageSmoothingEnabled = false;
 		g.clearRect(0,0,M.canvas.width,M.canvas.height);
 		UU.render(g);
-		if (Trpgdebugger.showmouse){
+		if (Trpg.debugger.showmouse){
 			g.fillStyle = "white";
 			g.fillRect(Ms.x()-5,Ms.y()-5,10,10);
 		}
