@@ -87,6 +87,7 @@ function init(){
 	hub.down=U.keydown.bind(U);
 	hub.up=U.keyup.bind(U);
 	K.setupListeners(hub,document.body);
+	window.scrollTo(0, 1);
 	M.startLoop();
 }
 addScripts("Libraries/",["seedrandom.js"]);

@@ -4126,7 +4126,7 @@ function TileRpgFramework(){
 			this.saying = "";
 			this.attacktarget = -1;
 			this.attack = function(target){
-				this.settarget(target, function(){if (this.target!== -1 && !this.target.loc.inmdist(this.loc,this.attrange))this.attack(this.target)});
+				//this.settarget(target, function(){if (this.target!== -1 && !this.target.loc.inmdist(this.loc,this.attrange))this.attack(this.target)});
 			}
 			//this.mx = this.my = 16;
 			this.range = 5;
@@ -4617,8 +4617,8 @@ function TileRpgFramework(){
 				Combatable.prototype.init.call(this,wl);
 				this.respawndelay = 5;
 				this.actions.attack = function(){
-					cancelaction();
-					Trpg.player.attack(this);
+					//cancelaction();
+					//Trpg.player.attack(this);
 				}
 				this.cb = 0;
 				this.maxhp = this.hp = 0;
