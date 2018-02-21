@@ -48,8 +48,13 @@ function KeysFramework(){
 		}
 	}
 		
-	this.setupListeners = function(keyhub, div){div.addEventListener("keydown",(function(c){this.get(c.keyCode,true).down=true;}).bind(this));
-	div.addEventListener("keyup",(function(c){this.get(c.keyCode,true).down=false;}).bind(this));
+	this.setupListeners = function(keyhub, div){div.addEventListener("keydown",(function(c){this.get(c.keyCode,true).down=true;
+		//if (c.code.charAt(0)=="F")return;
+       // c.preventDefault();c.stopPropagation();
+		}).bind(this));div.addEventListener("keyup",(function(c){this.get(c.keyCode,true).down=false;
+		//if (c.code.charAt(0)=="F")return;
+      //  c.preventDefault();c.stopPropagation();
+		}).bind(this));
 	for(var i=0;i<3;i++)div.addEventListener("key"+(["down","up","press"])[i],keyhub.dup.bind(keyhub,this,i));}
 	this.KeyHub = function(){this.down = function(){};this.up = function(){};this.pressed = function(){};
 	this.dup = function(k,e,c){(([this.down,this.up,this.pressed])[e])(c/*k.get(c.keyCode,true)*/);}}

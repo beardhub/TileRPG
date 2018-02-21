@@ -68,12 +68,18 @@ function UtilsFramework(){
 		}
 		this.clearfocus = function(){
 			hasfocus = false;
+			
+				document.getElementById("inpbox").blur();
+				document.getElementById("inpbox").style.display = "none";
 		}
 		this.focus = function(){
 			for (var i in inputs)
 				if (i !== "sets")
 					inputs[i].clearfocus();
 			hasfocus = true;
+			//if (window.mobile)
+				document.getElementById("inpbox").style.display = "block";
+				document.getElementById("inpbox").focus();
 			return this;
 		}
 		this.updatetext = function(){}
@@ -89,8 +95,14 @@ function UtilsFramework(){
 				this.updatetext(this.text);
 				return true;
 			}
+			if (k.key == "Enter")
+				return this.onenter() || true;
+			if (k.key == "Tab")
+				return this.ontab() || true;
 			return false;
 		}
+		this.onenter = function(){}
+		this.ontab = function(){}
 		this.clear = function(){
 			this.text = "";
 			this.updatetext(this.text);

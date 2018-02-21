@@ -22,7 +22,15 @@ function init(){
 	{f:MouseFramework,n:"Ms"},
 	{f:TileRpgFramework,n:"Trpg"}
 	]);
+	/*if (true || window.mobile){
+		var inp = document.createElement("input");
+		inp.setAttribute("type","text");
+		inp.setAttribute("style","z-index:101");
+		document.head.appendChild(inp);
+	}*/
+//<input type="text" style="z-index:101; position:absolute; top:10px; left:10px;"/>
 	assetsbit();
+	window.scrollTo(0, 1);
 	document.body.style.margin="0px";
 	M.createCanvas(window.innerWidth,window.innerHeight);
 	var smaller=M.canvas.width,larger=M.canvas.height;
@@ -87,7 +95,6 @@ function init(){
 	hub.down=U.keydown.bind(U);
 	hub.up=U.keyup.bind(U);
 	K.setupListeners(hub,document.body);
-	window.scrollTo(0, 1);
 	M.startLoop();
 }
 addScripts("Libraries/",["seedrandom.js"]);

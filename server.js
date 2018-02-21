@@ -84,22 +84,25 @@ io.on('connection', function(socket){
 		io.emit("playerleft",players[username]);
 	})
 	socket.on("trylogin", function(data){
-		console.log("username: "+data.u);
-		console.log("password: "+data.p);
-		if (typeof accounts[data.u] == "undefined" || accounts[data.u].password !== data.p)
+		console.log("username: "+data.username);
+		console.log("password: "+data.password);
+		if (typeof accounts[data.username] == "undefined" || accounts[data.username].password !== data.password)
 		return socket.emit("failedlogin");
-		//accounts[data.u] = {password:data.p};
-		if (accounts[data.u].online)
+		//accounts[data.username] = {password:data.password};
+		if (accounts[data.username].online)
 		return socket.emit("alreadyonline");
-		socket.emit("enterserver",{p:players[data.u],w:worlddata});
+		socket.emit("enterserver",{p:players[data.username],w:worlddata});
 		socket.emit("updateworld",worlddata);
-		io.emit("playerjoined",players[data.u]);
-		accounts[data.u].online = true;
+		//io.emit("playerjoined",players[data.username]);
+		accounts[data.username].online = true;
+	});
+	socket.on("playerjoined",function(p){
+		socket.broadcast.emit("playerjoined",p);
 	});
 	socket.on("register",function(data){
-		if (typeof accounts[data.u] !== "undefined")
+		if (typeof accounts[data.username] !== "undefined")
 		return socket.emit("usertaken");
-		accounts[data.u] = {password:data.p,online:false,inactivity:0};
+		accounts[data.username] = {password:data.password,online:false,inactivity:0};
 		socket.emit("accountregistered",data);
 	});
 	socket.on("saveplayer",function(data){
@@ -142,43 +145,49 @@ io.on('connection', function(socket){
 				players[p].online = false;
 			//plays.push(players[p]);
 		io.emit("pingactive");*/
-		
+		//console.log(accounts);
 		accounts[username].inactivity = 0;
 		accounts[username].online = true;
 		
 		var plays = [];
-		for (var p in players)
+		for (var p in players){
+			//console.log(players);
 			if (p !== "sets" && accounts[p].online)
 				plays.push(players[p]);
+		}
+		//console.log(plays);
 		//socket.emit("updateworld",worlddata);
 		socket.emit("getplayers",plays);
 		//socket.emit("updateself",plays);
 	});
 	socket.on("givepriv",function(data){
-		if (players[data.u])
-			for (var i = 0; i < data.p.length; i++)
-				players[data.u].privileges.push(data.p[i]);
+		if (players[data.username])
+			for (var i = 0; i < data.privs.length; i++)
+				players[data.username].privileges.push(data.privs[i]);
 		/*var plays = [];
 		for (var p in players)
 			if (p !== "sets" && players[p].online)
 				//plays.push(players[p]);
 				plays.push({username:players[p].username,privileges:players[p].privileges});*/
-		//console.log(players[data.u]);
-		io.emit("changeme",{username:data.u,privileges:players[data.u].privileges});
+		//console.log(players[data.username]);
+		io.emit("changeme",{username:data.username,privileges:players[data.username].privileges});
 	});
 	socket.on("removepriv",function(data){
-		if (players[data.u])
-			for (var i = 0; i < data.p.length; i++){
-				var ps = players[data.u].privileges;
-				ps.splice(ps.indexOf(data.p[i]),1);
+		if (players[data.username])
+			for (var i = 0; i < data.password.length; i++){
+				var ps = players[data.username].privileges;
+				ps.splice(ps.indexOf(data.password[i]),1);
 			}
-		io.emit("changeme",{username:data.u,privileges:players[data.u].privileges});
-				//players[data.u].privileges.splice()(data.p[i]);
+		io.emit("changeme",{username:data.username,privileges:players[data.username].privileges});
+				//players[data.username].privileges.splice()(data.password[i]);
 		/*var plays = [];
 		for (var p in players)
 			if (p !== "sets" && players[p].online)
 				plays.push(players[p]);
 		io.emit("changeme",plays);*/
+	});
+	socket.on("playertarget",function(data){
+		socket.broadcast.emit("playertarget",data);
 	});
 	/*socket.on("removeplayer",function(username){
 		if (players[username])
