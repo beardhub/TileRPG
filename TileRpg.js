@@ -3522,13 +3522,15 @@ function TileRpgFramework(){
 					entering:false,
 					onclick:function(){
 						this.entering = !this.entering;
-						if (this.entering){							
-							document.getElementById("inpbox").style.display = "block";
-							//document.getElementById("inpbox").focus();
+						var ibox = document.getElementById("inpbox")
+						if (this.entering){
+							ibox.style.display = "block";
+							ibox.focus();
 						} else {
-							document.getElementById("inpbox").style.display = "none";
-							//document.getElementById("inpbox").blur();
-							var text = document.getElementById("inpbox").value;
+							ibox.style.display = "none";
+							ibox.blur();
+							var text = ibox.value;
+							ibox.value = "";
 							if (text == null)
 								return;
 							if (text.charAt(0) == "/")
