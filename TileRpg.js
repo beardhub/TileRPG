@@ -2,7 +2,7 @@ function TileRpgFramework(){
 	this.frameworkName = "TileRpgFramework";
 	//var Trpg = this;
 	this.ismobile = false;//window.mobilecheck();
-	window.mobile = true;	
+	//window.mobile = true;	
 	this.debugger = {
 		showmouse:false,
 		showentitypaths:false,
