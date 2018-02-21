@@ -50,7 +50,7 @@ function sendupdates(){
 setInterval(function(){
 	for (var a in accounts)
 		if (a !== "sets" && accounts[a].online)
-			if (accounts[a].inactivity < 60*1)
+			if (accounts[a].inactivity < 60*.5)
 				accounts[a].inactivity++;
 			else accounts[a].online = false;
 },1000);

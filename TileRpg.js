@@ -3521,6 +3521,7 @@ function TileRpgFramework(){
 					//rightclick:false,
 					entering:false,
 					onclick:function(){
+						/*
 						this.entering = !this.entering;
 						var ibox = document.getElementById("inpbox")
 						if (this.entering){
@@ -3539,7 +3540,7 @@ function TileRpgFramework(){
 								Trpg.player.say(text);
 						}
 						return;
-						
+						*/
 						var text = prompt("Enter Text");
 						if (text == null)
 							return;
