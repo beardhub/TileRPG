@@ -3519,7 +3519,25 @@ function TileRpgFramework(){
 			if (window.mobile){
 				this.container.container.add(new UI.Button(this.container.x+this.container.w-100-5,this.container.y+this.container.h-100-5,100,100).sets({
 					//rightclick:false,
+					entering:false,
 					onclick:function(){
+						this.entering = !this.entering;
+						if (this.entering){							
+							document.getElementById("inpbox").style.display = "block";
+							document.getElementById("inpbox").focus();
+						} else {
+							document.getElementById("inpbox").style.display = "none";
+							document.getElementById("inpbox").blur();
+							var text = document.getElementById("inpbox").value;
+							if (text == null)
+								return;
+							if (text.charAt(0) == "/")
+								command(text.substring(1));
+							else if (text !== "")
+								Trpg.player.say(text);
+						}
+						return;
+						
 						var text = prompt("Enter Text");
 						if (text == null)
 							return;
@@ -3531,7 +3549,8 @@ function TileRpgFramework(){
 						g.fillStyle = "black";
 						g.font = "25px Arial";
 						Drw.drawCText(g,"Enter",this.w/2,this.h/3);
-						Drw.drawCText(g,"Text "+(!Trpg.toolbox.rightclick?"on":"off"),this.w/2,this.h/3*2);
+						
+						Drw.drawCText(g,"Text",this.w/2,this.h/3*2);
 					}
 				}));
 			}
