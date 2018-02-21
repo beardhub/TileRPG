@@ -3524,10 +3524,10 @@ function TileRpgFramework(){
 						this.entering = !this.entering;
 						if (this.entering){							
 							document.getElementById("inpbox").style.display = "block";
-							document.getElementById("inpbox").focus();
+							//document.getElementById("inpbox").focus();
 						} else {
 							document.getElementById("inpbox").style.display = "none";
-							document.getElementById("inpbox").blur();
+							//document.getElementById("inpbox").blur();
 							var text = document.getElementById("inpbox").value;
 							if (text == null)
 								return;
