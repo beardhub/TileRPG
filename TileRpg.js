@@ -358,7 +358,7 @@ function TileRpgFramework(){
 				//alert("Login successful");
 				StartGame(false, data);
 				Trpg.socket.emit("playerjoined",Trpg.player.save());
-				H.add(new Utils.Timer(.1).start().setAuto(true,function(){
+				H.add(new Utils.Timer(1).start().setAuto(true,function(){
 					Trpg.socket.emit("updateme",Trpg.player.username);
 				}));
 				H.add(new Utils.Timer(1).start().setLoop(true).setAuto(true,function(){
