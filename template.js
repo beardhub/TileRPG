@@ -64,14 +64,14 @@ function init(){
 		var t = 1/25;
 		//if (adt < t)	return;
 		while (adt >= t){
-			adt-=t;
-			UU.update(t);
-			if (adt>.5){
-				UU.update(.5);
+			if (adt>.25){
+				UU.update(.25);
 				adt = 0;
 				//adt-=5;
 				//UU.update(5);
 			}
+			adt-=t;
+			UU.update(t);
 			
 
 		}

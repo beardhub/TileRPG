@@ -488,9 +488,9 @@ function TileRpgFramework(){
 				
 				
 					var others = Trpg.Entities.getoftype("Player");
-					console.log("===");
-					console.log(others);
-					console.log(players);
+					//console.log("===");
+					//console.log(others);
+					//console.log(players);
 				loop:
 				for (var j = 0; j < players.length; j++)
 					if (players[j].username !== Trpg.player.username){
@@ -578,7 +578,9 @@ function TileRpgFramework(){
 					if (others[i].username == data.username)
 						others[i].settarget({loc:new Trpg.WorldLoc().loadStr(data.targetstr)});
 			});
-			
+			Trpg.socket.on("disconnectplox",function(){
+				location.reload(true);
+			});
 			return m;
 		}
 		/*makeShortcut(H.get("Gameplay"),"Gameplay",true);
@@ -3491,7 +3493,7 @@ function TileRpgFramework(){
 					//	Trpg.Structures.fillchunk(newchunk.wl);
 				}
 			for (var k = 0; k < this.loaded.length; k++)
-				if (!this.loaded[k].wl.indist(ccenter,8)){
+				if (!this.loaded[k].wl.indist(ccenter,this.chunkrad*8)){
 					var changes = this.loaded[k].getChanges();
 					if (changes!="none"){
 						Trpg.world.changes[this.loaded[k].code] = changes;

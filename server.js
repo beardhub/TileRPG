@@ -78,6 +78,8 @@ io.on('connection', function(socket){
 	socket.emit("initworld",worlddata);
 	socket.on("gooffline",function(username){
 		socket.disconnect();
+		if (!accounts[username])
+			return;
 		if (username)
 			accounts[username].online = false;
 		console.log(username);
@@ -146,13 +148,17 @@ io.on('connection', function(socket){
 			//plays.push(players[p]);
 		io.emit("pingactive");*/
 		//console.log(accounts);
+		if (!accounts[username]){
+			socket.emit("disconnectplox");
+			return;
+		}
 		accounts[username].inactivity = 0;
 		accounts[username].online = true;
 		
 		var plays = [];
 		for (var p in players){
 			//console.log(players);
-			if (p !== "sets" && accounts[p].online)
+			if (p !== "sets" && accounts[p] && accounts[p].online)
 				plays.push(players[p]);
 		}
 		//console.log(plays);
