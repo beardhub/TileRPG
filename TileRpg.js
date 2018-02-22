@@ -358,12 +358,12 @@ function TileRpgFramework(){
 				//alert("Login successful");
 				StartGame(false, data);
 				Trpg.socket.emit("playerjoined",Trpg.player.save());
-				H.add(new Utils.Timer(1).start().setAuto(true,function(){
-					Trpg.socket.emit("updateme",Trpg.player.username);
-				}));
+				//H.add(new Utils.Timer(1).start().setAuto(true,function(){
+				//	Trpg.socket.emit("updateme",Trpg.player.username);
+				//}));
 				H.add(new Utils.Timer(1).start().setLoop(true).setAuto(true,function(){
 					Trpg.socket.emit("saveplayerloc",{username:Trpg.player.username,loc:Trpg.player.loc.tomStr()});
-					//Trpg.socket.emit("updateme",Trpg.player.username);
+					Trpg.socket.emit("updateme",Trpg.player.username);
 				}));
 					//Trpg.socket.emit("updateme",Trpg.player.username);}));
 				//H.add(new Utils.Timer(.1).start().setLoop(true).setAuto(true,function(){Trpg.socket.emit("updateme",Trpg.player.username);}));
@@ -488,13 +488,16 @@ function TileRpgFramework(){
 				
 				
 					var others = Trpg.Entities.getoftype("Player");
+					console.log("===");
+					console.log(others);
+					console.log(players);
 				loop:
 				for (var j = 0; j < players.length; j++)
 					if (players[j].username !== Trpg.player.username){
 					for (var i = 0; i < others.length; i++)
 						if (others[i].username == players[j].username){
 							others[i].load(players[j]);
-							//break loop;
+							continue loop;
 						}
 					Trpg.Entities.add(new Trpg.OtherPlayer(players[j]));
 				}
@@ -3798,10 +3801,11 @@ function TileRpgFramework(){
 				else if (text !== "")
 					Trpg.player.say(text);
 					//Trpg.Console.add(text);
-				that.textinp.clearfocus();
+				//that.textinp.clearfocus();
 				that.textinp.clear();
 			}
-			this.container.add(new Utils.KeyListener("down","Enter",function(){
+			this.textinp.focus();
+			if (false)this.container.add(new Utils.KeyListener("down","Enter",function(){
 				if (!that.textinp.hasfocus())
 					that.textinp.focus();
 				/*else {
@@ -3822,13 +3826,13 @@ function TileRpgFramework(){
 					that.textinp.clear();
 				}*/
 			}));
-			this.container.add(new Utils.KeyListener("down","Escape",function(){
+			if (false)this.container.add(new Utils.KeyListener("down","Escape",function(){
 				var sightline = Trpg.board.container.get("sightline");
 				sightline.show = !sightline.show;
 				if (that.textinp.hasfocus())
 					that.textinp.clearfocus();
 			}));
-			this.container.add(new Utils.KeyListener("down","/",function(){
+			if (false)this.container.add(new Utils.KeyListener("down","/",function(){
 				if (!that.textinp.hasfocus())
 					that.textinp.focus();
 				that.textinp.keydown({key:"/"});
