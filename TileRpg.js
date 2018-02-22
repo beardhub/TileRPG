@@ -2425,7 +2425,7 @@ function TileRpgFramework(){
 		return menu;
 	}
 	function BoardMenu(wl){
-		var z = Trpg.Home.get("Gameplay.Board").camera.getzoom();
+		var z = Trpg.board.container.camera.getzoom();
 		var menu = new Trpg.Menu();
 		menu.x = 400+(Trpg.player.loc.dx(wl)*32-Trpg.player.loc.mx+16)*z-menu.w/2;
 		menu.y = 415+(Trpg.player.loc.dy(wl)*32-Trpg.player.loc.my)*z;
@@ -7469,8 +7469,8 @@ function TileRpgFramework(){
 				}
 				this.load = function(save){
 					this.ground = save.ground;
-					save.wl = JSON.parse(save.wl);
-					this.wl = new Trpg.WorldLoc(save.wl.wx, save.wl.wy, save.wl.cx, save.wl.cy);
+					//save.wl = JSON.parse(save.wl);
+					this.wl = new Trpg.WorldLoc().loadStr(save.wl);//new Trpg.WorldLoc(save.wl.wx, save.wl.wy, save.wl.cx, save.wl.cy);
 					//var items = [];
 					//this.contents = {}
 					if (!exists(Trpg.bank))
@@ -7489,7 +7489,7 @@ function TileRpgFramework(){
 				this.save = function(){
 					return {
 						type:this.type,
-						wl:JSON.stringify(this.wl.copy()),
+						wl:this.wl.toStr(),//JSON.stringify(this.wl.copy()),
 						ground:this.ground,
 						//contents:JSON.stringify(this.contents),
 						//count:0,//exists(this.growtimer) ? this.growtimer.count : 0
