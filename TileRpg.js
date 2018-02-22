@@ -2789,24 +2789,27 @@ function TileRpgFramework(){
 		this.add = function(message, color){
 			this.history.push(msg(message,color));
 			this.vhistory.push(msg(message,color));
-			var vhist = this.vhistory;
-			var timers = this.timers;
+			//var vhist = this.vhistory;
+			//var timers = this.timers;
+			/*if (!window.mobile)
 			this.timers.push(new Utils.Timer(2).start().setAuto(true,function(){
 				vhist.shift();
 				timers.shift();
-			}));
+			}));*/
+			//this.vhistory = this.vhistory.slice(0,8);
 		}
-		this.update = function(d){
+		this.update = function(){}
+		/*this.update = function(d){
 			for (var t in this.timers)
 				if (t !== "sets")
 					this.timers[t].update(d);
-		}
+		}*/
 		this.render = function(g){
 			//var texts = this.history;
 			var texts = this.vhistory;
-			if (Trpg.board.textinp.hasfocus()){
+			/*if (Trpg.board.textinp.hasfocus()){
 				texts = this.history;
-			}
+			}*/
 			g.font = "15px Arial";
 			for (var i = 0; i < texts.length && i < 8; i++)
 				Drw.drawCText(g,texts[texts.length-i-1].m,3,-18.5*i-4,
@@ -3519,7 +3522,6 @@ function TileRpgFramework(){
 			if (window.mobile){
 				this.container.container.add(new UI.Button(this.container.x+this.container.w-100-5,this.container.y+this.container.h-100-5,100,100).sets({
 					//rightclick:false,
-					entering:false,
 					onclick:function(){
 						/*
 						this.entering = !this.entering;
