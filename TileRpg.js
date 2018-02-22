@@ -496,7 +496,7 @@ function TileRpgFramework(){
 					if (players[j].username !== Trpg.player.username){
 					for (var i = 0; i < others.length; i++)
 						if (others[i].username == players[j].username){
-							others[i].load(players[j]);
+							//others[i].load(players[j]);
 							continue loop;
 						}
 					Trpg.Entities.add(new Trpg.OtherPlayer(players[j]));
