@@ -3649,11 +3649,12 @@ function TileRpgFramework(){
 						*/
 						var text = prompt("Enter Text");
 						if (text == null)
-							return;
+							return true;
 						if (text.charAt(0) == "/")
 							command(text.substring(1));
 						else if (text !== "")
 							Trpg.player.say(text);
+						return true;
 					},inrender:function(g){
 						g.fillStyle = "black";
 						g.font = "25px Arial";
