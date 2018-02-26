@@ -9,7 +9,7 @@ io.set('transports', ['websocket']);//============
 var port = process.env.PORT || 8080;
 app.use(express.static(__dirname));
 var worlddata = {
-	seed:"zack is cool",
+	seed:"world1",
 	changed:[],
 	changes:{},
 	ups:0
@@ -73,16 +73,40 @@ function findClientsSocket(roomId, namespace) {
     }
     return res;
 }
+setInterval(function(){
+	//send location
+	//return;
+	io.emit("getentities",entitydatas);
+	//console.log(entitydatas);
+	return;
+	for (var p in entitydatas)
+		if (p !== "sets")
+			entitydatas[p].changed = false;
+},100);
+var ticks = 0;
+var tiledatas = {};
+var entitydatas = {};
+var nextentitydatas = {};
+var hostsocket;
+var hostq = [];
 io.on('connection', function(socket){
 	console.log('a user connected');
+	/*if (!hostsocket){
+		hostsocket = socket;
+		console.log("made host");
+	} else {
+		hostq.push(socket);
+	}*/
 	socket.emit("initworld",worlddata);
 	socket.on("gooffline",function(username){
 		socket.disconnect();
+		entitydatas[username] = false;
 		if (!accounts[username])
 			return;
 		if (username)
 			accounts[username].online = false;
-		console.log(username);
+		//console.log(username);
+		io.emit("removeentity",username);
 		io.emit("playerleft",players[username]);
 	})
 	socket.on("trylogin", function(data){
@@ -95,8 +119,13 @@ io.on('connection', function(socket){
 		return socket.emit("alreadyonline");
 		socket.emit("enterserver",{p:players[data.username],w:worlddata});
 		socket.emit("updateworld",worlddata);
+		socket.emit("tilechanges",tiledatas);
+		//socket.emit("getentities",entitydatas);
 		//io.emit("playerjoined",players[data.username]);
 		accounts[data.username].online = true;
+	});
+	socket.on("collectentities",function(){
+		socket.emit("getentities",entitydatas);
 	});
 	socket.on("playerjoined",function(p){
 		socket.broadcast.emit("playerjoined",p);
@@ -114,6 +143,11 @@ io.on('connection', function(socket){
 		if (!players[data.username])	return;
 		players[data.username].loc = data.loc;
 		//players[data.username].saying = data.saying;
+	});
+	socket.on("removeentity",function(id){
+		entitydatas[id] = false;
+		//io.emit("removeentity",id);
+		io.emit("getentities",entitydatas);
 	});
 	socket.on("regchanges",function(data){
 		for (var i = 0; i < data.length; i++)
@@ -135,11 +169,50 @@ io.on('connection', function(socket){
 		worlddata.ups++;
 		//sendupdates();
 	});
+	socket.on("tilechange",function(data){
+		tiledatas[data.loc] = data.type;
+		socket.broadcast.emit("tilechange",data);
+	});
 	/*socket.on("confirmactive",function(username){
 		players[username].online = true;
 	});*/
+	socket.on("newentity",function(data){
+		//hostsocket.emit("newentity",data);
+		entitydatas[data.id] = data;
+		//socket.broadcast.emit("")
+		//console.log(entitydatas[data.id]);
+		//socket.broadcast.emit("newentity",data);
+	});
 	socket.on("playerspeak",function(str){
 		socket.broadcast.emit("playerspeak",str);
+	});
+	socket.on("saveentities",function(data){
+		//return;
+		//if (socket !== hostsocket)return;
+		data.forEach((e)=>{if (e&&e.id)entitydatas[e.id] = e;});
+		//socket.broadcast.emit("getentities",entitydatas);
+		//socket.emit("getentities",entitydatas);
+	});
+	socket.on("affectentity",function(data){
+		io.emit("affectentity",data);
+	});
+	socket.on("affectentityother",function(data){
+		socket.broadcast.emit("affectentity",data);
+	});
+	socket.on("saveentity",function(data){
+		//if (socket === hostsocket || data.type !== "Player")return;
+		//hostsocket && hostsocket.emit("updateentity",data);
+		//return;
+		//if (socket !== hostsocket && data.type !== "Player")return;
+		if (entitydatas[data.id] === false)return;
+		if (!entitydatas[data.id])
+			entitydatas[data.id] = {};
+		for (var p in data)
+			if (p !== "sets" && data[p]){ // } && !entitydatas[data.id].changed){
+				entitydatas[data.id][p] = data[p];
+			}
+			
+		//entitydatas[data.id].changed = true;
 	});
 	socket.on("updateme",function(username){
 		/*for (var p in players)
@@ -154,6 +227,8 @@ io.on('connection', function(socket){
 		}
 		accounts[username].inactivity = 0;
 		accounts[username].online = true;
+		return;
+		socket.emit("getentities",entitydatas);
 		
 		var plays = [];
 		for (var p in players){
@@ -167,16 +242,27 @@ io.on('connection', function(socket){
 		//socket.emit("updateself",plays);
 	});
 	socket.on("givepriv",function(data){
-		if (players[data.username])
+		//if (players[data.username])
+		//console.log(entitydatas[data.username]);
+		if (entitydatas[data.username])
 			for (var i = 0; i < data.privs.length; i++)
-				players[data.username].privileges.push(data.privs[i]);
+				entitydatas[data.username].privileges.push(data.privs[i]);
+			entitydatas[data.username].changed = true;
+			socket.emit("affectentity",{id:data.username,func:"setprivs",args:entitydatas[data.username].privileges})
+		//console.log(entitydatas[data.username]);
+		//io.emit("getentities",entitydatas);
+			return;
 		/*var plays = [];
 		for (var p in players)
 			if (p !== "sets" && players[p].online)
 				//plays.push(players[p]);
 				plays.push({username:players[p].username,privileges:players[p].privileges});*/
 		//console.log(players[data.username]);
-		io.emit("changeme",{username:data.username,privileges:players[data.username].privileges});
+		var d = entitydatas[data.username];
+		console.log(d);
+		d.privileges = players[data.username].privileges;
+		io.emit("changeme",d);
+		//io.emit("changeme",{username:data.username,privileges:players[data.username].privileges});
 	});
 	socket.on("removepriv",function(data){
 		if (players[data.username])
@@ -199,12 +285,23 @@ io.on('connection', function(socket){
 		if (players[username])
 			players[username].online = false;
 	});*/
-	
 	/*socket.on("leave",function(data){
 		players[data.playername] = data.playerdata;
 	});*/
 	socket.on('disconnect', function(){
 		console.log('user disconnected');
+		if (hostq.indexOf(socket)!==-1)
+			hostq.splice(hostq.indexOf(socket),1);
+		if (socket === hostsocket){
+			console.log("host left");
+			if (hostq.length > 0){
+				hostsocket = hostq.shift();
+				console.log("new host");
+			} else {
+				hostsocket = false;
+				console.log("out of hosts");
+			}
+		}
 	});
 });
 

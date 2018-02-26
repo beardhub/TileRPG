@@ -117,3 +117,13 @@ window.mobilecheck = function() {
   return check;
 };
 window.mobile = window.mobilecheck();
+Function.prototype.curry = function() {
+  var fn = this;
+  var args = [].slice.call(arguments, 0);
+  return function() {
+    return fn.apply(this, args.concat([].slice.call(arguments, 0)));
+  };
+}
+function capitalize(str){
+	return str.charAt(0).toUpperCase()+str.substring(1);
+}

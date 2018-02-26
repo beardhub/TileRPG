@@ -297,7 +297,8 @@ function UtilsFramework(){
 					if (typeof this.oncomp == "function"){
 						this.oncomp();
 						if (this.killoncomp) 
-							this.container.remove(this);
+							this.removeme();
+							//this.container.remove(this);
 					}
 		}
 	}

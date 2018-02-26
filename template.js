@@ -105,6 +105,7 @@ function assetsbit(){
 	Ast.loadImage("cow","Cow.png");
 	Ast.loadImage("guard","Guard.png");
 	Ast.loadImage("man","Man.png");
+	Ast.loadImage("dummy","Dummy.png");
 	//}
 	//{misc
 	Ast.loadImage("hole","Hole.png");
