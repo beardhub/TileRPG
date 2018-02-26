@@ -1203,6 +1203,15 @@ function TileRpgFramework(){
 			case "removeprivs":
 				Trpg.socket.emit("affectentity",{id:vals.shift(),func:"removeprivs",args:[vals]});
 				return;
+			case "unequip":
+				var off = -1;
+			case "equip":
+				off = off || false;
+				var slot = vals.shift();
+				if (["helm","body","legs","kite"].indexOf(slot)==-1)
+					return;
+				Trpg.player.equipment[slot] = off || "bronze"+slot+"equip";
+				return;
 			case "C":
 				new Trpg.Entities.Cow(Trpg.player.loc,false, true);
 				return;
@@ -3616,6 +3625,23 @@ function TileRpgFramework(){
 			this.online = true;
 			this.actions.examine = function(){
 				Trpg.Console.add(this.gettitle());
+			}
+			this.equipment = {
+				helm:-1,
+				body:-1,
+				legs:-1,
+				kite:-1
+			};
+			this.inrender = function(g){
+				try {
+					g.drawImage(Ast.i(this.img.toLowerCase()),-16,-16);
+				} catch(e) {
+					g.fillStyle = "black";
+					Drw.drawCText(g,this.img,-16,-16);
+				}
+				for (var p in this.equipment)
+					if (p !== "sets" && this.equipment[p] !== -1)
+						g.drawImage(Ast.i(this.equipment[p]),-16,-16);
 			}
 			//this.attackdelay.dur = .7;
 			this.respawndelay = 1;

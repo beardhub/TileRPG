@@ -233,6 +233,12 @@ function assetsbit(){
 	Ast.loadImage("player","PlayerS.png");
 	Ast.loadImage("playerE","PlayerE.png");
 	Ast.loadImage("playerW","PlayerW.png");//}
+	//{equipment
+	Ast.loadImage("bronzehelmequip","BronzeHelmEquip.png");
+	Ast.loadImage("bronzebodyequip","BronzeBodyEquip.png");
+	Ast.loadImage("bronzelegsequip","BronzeLegsEquip.png");
+	Ast.loadImage("bronzekiteequip","BronzeKiteEquip.png");
 	
+	//}
 	Ast.load();
 }
