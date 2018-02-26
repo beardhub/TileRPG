@@ -1164,12 +1164,9 @@ function TileRpgFramework(){
 				Trpg.setid = vals.shift();
 				return;
 			case "setimg":
-				var id = false;
-				if (vals.lenth > 1)
-					id = vals.shift();
-				if (!p.hasprivilege("admin") || vals.length == 1 && !id){
+				var id = vals.shift();
+				if (!p.hasprivilege("admin"))
 					id = Trpg.player.id;
-				}
 				Trpg.socket && Trpg.socket.emit("affectentity",{id:id,func:"sets",args:[{img:vals.shift()}]});
 				return;
 			case "killall":
@@ -1177,7 +1174,6 @@ function TileRpgFramework(){
 					Trpg.Console.add("You need owner privileges for this command");
 					return;
 				}
-				Trpg.pvp 
 				var type = vals.shift() || "!Player";
 				Trpg.BoardC.get("Entities").getq().forEach(
 					(e)=>{
