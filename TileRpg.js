@@ -1127,6 +1127,7 @@ function TileRpgFramework(){
 				var amt = parseFloat(vals[0]);
 				if (amt > 0 && !isNaN(amt))
 					Trpg.board.container.camera.zoom(amt);
+				return;
 			case "spawnrandtemp":
 				var min = parseInt(vals.shift(),10);
 				var max = parseInt(vals.shift(),10);
