@@ -1203,6 +1203,22 @@ function TileRpgFramework(){
 			case "removeprivs":
 				Trpg.socket.emit("affectentity",{id:vals.shift(),func:"removeprivs",args:[vals]});
 				return;
+			case "unequipall":
+				Trpg.player.equipment = {
+					helm:-1,
+					body:-1,
+					legs:-1,
+					kite:-1
+				};
+				return;
+			case "eqiupall":
+				Trpg.player.equipment = {
+					helm:"bronzehelmequip",
+					body:"bronzebodyequip",
+					legs:"bronzelegsequip",
+					kite:"bronzekiteequip"
+				};
+				return;
 			case "unequip":
 				var off = -1;
 			case "equip":
