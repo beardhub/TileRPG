@@ -87,16 +87,18 @@ var ticks = 0;
 var tiledatas = {};
 var entitydatas = {};
 var nextentitydatas = {};
-var hostsocket;
+var host;
 var hostq = [];
+var socketq = [];
 io.on('connection', function(socket){
 	console.log('a user connected');
-	/*if (!hostsocket){
-		hostsocket = socket;
+	/*if (!host){
+		host = socket;
 		console.log("made host");
 	} else {
 		hostq.push(socket);
 	}*/
+	socketq.push(socket);
 	socket.emit("initworld",worlddata);
 	socket.on("gooffline",function(username){
 		socket.disconnect();
@@ -149,6 +151,13 @@ io.on('connection', function(socket){
 		//io.emit("removeentity",id);
 		io.emit("getentities",entitydatas);
 	});
+	socket.on("removeentities",function(ids){
+		console.log(ids);
+		for (var i = 0; i < ids.length; i++)
+			entitydatas[ids[i]] = false;
+		//io.emit("removeentity",id);
+		io.emit("getentities",entitydatas);
+	});
 	socket.on("regchanges",function(data){
 		for (var i = 0; i < data.length; i++)
 			worlddata.changes[data[i].key] = data[i].changes;
@@ -177,7 +186,7 @@ io.on('connection', function(socket){
 		players[username].online = true;
 	});*/
 	socket.on("newentity",function(data){
-		//hostsocket.emit("newentity",data);
+		//host.emit("newentity",data);
 		entitydatas[data.id] = data;
 		//socket.broadcast.emit("")
 		//console.log(entitydatas[data.id]);
@@ -188,11 +197,17 @@ io.on('connection', function(socket){
 	});
 	socket.on("saveentities",function(data){
 		//return;
-		//if (socket !== hostsocket)return;
-		data.forEach((e)=>{if (e&&e.id)entitydatas[e.id] = e;});
+		//if (socket !== host)return;
+		data.forEach((e)=>{if (e&&e.id && entitydatas[e.id]!== false)entitydatas[e.id] = e;});
 		//socket.broadcast.emit("getentities",entitydatas);
 		//socket.emit("getentities",entitydatas);
 	});
+	/*socket.on("xferoriginals",function(origids){
+		origids.forEach((id)=>{
+			var socket = socketq[Math.floor(Math.random()*socketq.length)];
+			socket.emit("")
+		});
+	});*/
 	socket.on("affectentity",function(data){
 		io.emit("affectentity",data);
 	});
@@ -200,11 +215,14 @@ io.on('connection', function(socket){
 		socket.broadcast.emit("affectentity",data);
 	});
 	socket.on("saveentity",function(data){
-		//if (socket === hostsocket || data.type !== "Player")return;
-		//hostsocket && hostsocket.emit("updateentity",data);
+		//if (socket === host || data.type !== "Player")return;
+		//host && host.emit("updateentity",data);
 		//return;
-		//if (socket !== hostsocket && data.type !== "Player")return;
-		if (entitydatas[data.id] === false)return;
+		//if (socket !== host && data.type !== "Player")return;
+		if (entitydatas[data.id] == false){
+			console.log("no save");
+			return;
+		}
 		if (!entitydatas[data.id])
 			entitydatas[data.id] = {};
 		for (var p in data)
@@ -290,18 +308,19 @@ io.on('connection', function(socket){
 	});*/
 	socket.on('disconnect', function(){
 		console.log('user disconnected');
-		if (hostq.indexOf(socket)!==-1)
+		socketq.splice(socketq.indexOf(socket),1);
+		/*if (hostq.indexOf(socket)!==-1)
 			hostq.splice(hostq.indexOf(socket),1);
-		if (socket === hostsocket){
+		if (socket === host){
 			console.log("host left");
 			if (hostq.length > 0){
-				hostsocket = hostq.shift();
+				host = hostq.shift();
 				console.log("new host");
 			} else {
-				hostsocket = false;
+				host = false;
 				console.log("out of hosts");
 			}
-		}
+		}*/
 	});
 });
 
