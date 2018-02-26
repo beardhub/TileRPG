@@ -1182,7 +1182,7 @@ function TileRpgFramework(){
 				}
 				id = id || Trpg.player.id;
 				if (id == "@s") id = Trpg.setid;
-				var tools = ["tileedit","phase","remover"];
+				var tools = ["tileedit","phase","remover","telewalk"];
 				var newtools = [];
 				if (vals[0] == "all")
 					newtools = tools;
@@ -3212,7 +3212,9 @@ function TileRpgFramework(){
 					if (this.target == -1 && this.original)// && Math.random()*5<d)
 						this.wander();
 				}
-				if (this.target !== -1)
+				if (this.target !== -1 && this.type == "Player" && this.hasprivilege("telewalk"))
+					this.doaction("teleport",this.target.loc);
+				else if (this.target !== -1)
 					this.movetotarget(d);
 				//if (this.hidden)return;
 				//if (this.type == "Player" && this.original)// && false)
@@ -4371,6 +4373,7 @@ function TileRpgFramework(){
 				}
 				this.ground = "Grass";
 				this.actions.walk = function(){
+					
 					Trpg.player.settarget(this);
 					//Trpg.player.settarget({loc:Trpg.board.aim.copy()});
 					return;
