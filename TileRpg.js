@@ -3637,7 +3637,7 @@ function TileRpgFramework(){
 			this.removeprivs = function(privs){
 				var ps = this.privileges.slice();
 				for (var i = 0; i < privs.length; i++)
-					if (ps.indexOf(privs[i])==-1)
+					if (ps.indexOf(privs[i])!==-1)
 						ps.splice(ps.indexOf(privs[i]),1);
 				this.setprivs(ps);
 			}
