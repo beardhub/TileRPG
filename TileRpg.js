@@ -1163,8 +1163,13 @@ function TileRpgFramework(){
 				Trpg.setid = vals.shift();
 				return;
 			case "setimg":
-				if (!p.hasprivilege("admin"))	vals[0] = Trpg.player.id;
-				Trpg.socket && Trpg.socket.emit("affectentity",{id:vals.shift(),func:"sets",args:[{img:vals.shift()}]});
+				var id = false;
+				if (vals.lenth > 1)
+					id = vals.shift();
+				if (!p.hasprivilege("admin") || vals.length == 1 && !id){
+					id = Trpg.player.id;
+				}
+				Trpg.socket && Trpg.socket.emit("affectentity",{id:id,func:"sets",args:[{img:vals.shift()}]});
 				return;
 			case "killall":
 				if (!p.hasprivilege("owner")){
