@@ -1202,6 +1202,7 @@ function TileRpgFramework(){
 				return;
 			case "removeprivs":
 				Trpg.socket.emit("affectentity",{id:vals.shift(),func:"removeprivs",args:[vals]});
+				return;
 			case "C":
 				new Trpg.Entities.Cow(Trpg.player.loc,false, true);
 				return;
