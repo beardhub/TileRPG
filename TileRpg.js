@@ -1159,6 +1159,13 @@ function TileRpgFramework(){
 			case "forceremove":
 				Trpg.socket && Trpg.socket.emit("removeentity",vals.shift());
 				return;
+			case "@s":
+				Trpg.setid = vals.shift();
+				return;
+			case "setimg":
+				if (!p.hasprivilege("admin"))	vals[0] = Trpg.player.id;
+				Trpg.socket && Trpg.socket.emit("affectentity",{id:vals.shift(),func:"sets",args:[{img:vals.shift()}]});
+				return;
 			case "killall":
 				if (!p.hasprivilege("owner")){
 					Trpg.Console.add("You need owner privileges for this command");
@@ -1211,7 +1218,7 @@ function TileRpgFramework(){
 					kite:-1
 				};
 				return;
-			case "eqiupall":
+			case "equipall":
 				Trpg.player.equipment = {
 					helm:"bronzehelmequip",
 					body:"bronzebodyequip",
@@ -2842,7 +2849,7 @@ function TileRpgFramework(){
 			this.dx = 0;
 			this.dy = 0;
 			this.container.camera.zoomto(1/(this.viewsize-1)/64*this.container.w);
-			this.container.add(new UI.Follow(this.container.camera,Trpg.player,function(t){return t.x},function(t){return t.y},32));
+			this.container.add(new UI.Follow(this.container.camera,Trpg.player,function(t){return t.loc.xx()},function(t){return t.loc.yy()},32));
 			this.container.add(this.textinp = new Utils.TextInput("allchars"));
 			this.textinp.onenter = function(){
 				var text = that.textinp.gettext();
