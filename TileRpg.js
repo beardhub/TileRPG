@@ -1156,6 +1156,9 @@ function TileRpgFramework(){
 				}
 				Trpg.pvp = eval(vals.shift());
 				return;
+			case "forceremove":
+				Trpg.socket && Trpg.socket.emit("removeentity",vals.shift());
+				return;
 			case "killall":
 				if (!p.hasprivilege("owner")){
 					Trpg.Console.add("You need owner privileges for this command");
@@ -3213,8 +3216,8 @@ function TileRpgFramework(){
 						this.wander();
 				}
 				if (this.target !== -1 && this.type == "Player" && this.hasprivilege("telewalk")){
-					Trpg.socket && Trpg.socket.emit("affectentity",{func:"doaction",args:["teleport",this.target.loc.tomStr()],id:this.id});
-				//	this.doaction("teleport",this.target.loc);
+					this.doaction("teleport",this.target.loc);
+					Trpg.socket && Trpg.socket.emit("affectentityother",{func:"doaction",args:["teleport",this.target.loc.tomStr()],id:this.id});
 					//this.canceltarget();
 				}
 				else if (this.target !== -1)
