@@ -3212,8 +3212,11 @@ function TileRpgFramework(){
 					if (this.target == -1 && this.original)// && Math.random()*5<d)
 						this.wander();
 				}
-				if (this.target !== -1 && this.type == "Player" && this.hasprivilege("telewalk"))
-					this.doaction("teleport",this.target.loc);
+				if (this.target !== -1 && this.type == "Player" && this.hasprivilege("telewalk")){
+					Trpg.socket && Trpg.socket.emit("affectentity",{func:"doaction",args:["teleport",this.target.loc.tomStr()],id:this.id});
+				//	this.doaction("teleport",this.target.loc);
+					//this.canceltarget();
+				}
 				else if (this.target !== -1)
 					this.movetotarget(d);
 				//if (this.hidden)return;
