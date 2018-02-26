@@ -1200,6 +1200,8 @@ function TileRpgFramework(){
 				Trpg.GodTools.phase = true;
 				Trpg.GodTools.remover = true;*/
 				return;
+			case "removeprivs":
+				Trpg.socket.emit("affectentity",{id:vals.shift(),func:"removeprivs",args:[vals]});
 			case "C":
 				new Trpg.Entities.Cow(Trpg.player.loc,false, true);
 				return;
@@ -3216,8 +3218,8 @@ function TileRpgFramework(){
 						this.wander();
 				}
 				if (this.target !== -1 && this.type == "Player" && this.hasprivilege("telewalk")){
-					this.doaction("teleport",this.target.loc);
 					Trpg.socket && Trpg.socket.emit("affectentityother",{func:"doaction",args:["teleport",this.target.loc.tomStr()],id:this.id});
+					this.doaction("teleport",this.target.loc);
 					//this.canceltarget();
 				}
 				else if (this.target !== -1)
