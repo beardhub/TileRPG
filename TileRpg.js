@@ -3734,6 +3734,7 @@ function TileRpgFramework(){
 				//throw("Weffewf");
 				//if (this.original)
 				return {
+					img:this.img,
 					username:this.username,
 					online:this.online,
 					privileges:this.privileges,
@@ -3752,6 +3753,7 @@ function TileRpgFramework(){
 			this.load = function(save){
 				if (this.original)// ("im me");
 					return;
+				if (save.img)this.img = save.img;
 				if (save.type && save.type !== this.type){
 					console.log(save);
 					Trpg.BoardC.add(new Trpg.Entities[save.type]
