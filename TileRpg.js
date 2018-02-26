@@ -3635,10 +3635,11 @@ function TileRpgFramework(){
 				this.setprivs(ps);
 			}
 			this.removeprivs = function(privs){
-				var ps = this.privileges.slice();
-				for (var i = 0; i < privs.length; i++)
-					if (ps.indexOf(privs[i])!==-1)
-						ps.splice(ps.indexOf(privs[i]),1);
+				var ps = [];
+				//var ps = this.privileges.slice();
+				for (var i = 0; i < this.privileges.length; i++)
+					if (privs.indexOf(this.privileges[i]) == -1)//.indexOf(privs[i])!==-1)
+						ps.push(this.privileges[i]);//ps.splice(ps.indexOf(privs[i]),1);
 				this.setprivs(ps);
 			}
 			this.setprivs = function(privs){
