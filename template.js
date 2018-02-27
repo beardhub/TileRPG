@@ -45,6 +45,7 @@ function init(){
 	U.color="black";
 	//U.camera.centerZero();
 	UU.add(U);
+	U.hidden = true;
 	/*window.onresize = function(){
 		M.canvas.width = UU.w = window.innerWidth;
 		M.canvas.height = UU.h = window.innerHeight;

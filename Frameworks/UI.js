@@ -348,6 +348,9 @@ function UIFramework(){
 				//g.translate((this.x*scale-this.w/2), (this.y*scale-this.h/2));
 			}
 		}
+		this.filterq = function(func){
+			q.filter(func);
+		}
 		this.tabq = [];
 		this.tabl = [];
 		this.newtab = function(name, box){

@@ -1,18 +1,9 @@
 (function(){var s = document.createElement("script");s.setAttribute("src","template.js");document.head.appendChild(s);})()
 function start(){
+	U.hidden = false;
 	Trpg.Populate(U);
 }
 /*
-client 1
- join
- spawn cow
-client 2
-
-
-
-
-
-
 quests
 	storylines
 	generated quests

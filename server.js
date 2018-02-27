@@ -16,19 +16,17 @@ var worlddata = {
 }
 var players = {}
 var accounts = {}
-
 app.get('/', function(req, res){
 	res.sendFile(__dirname + '/index.html');
 });
 /*io.configure(function () {
 	io.set('transports', ['flashsocket', 'xhr-polling']);
-});*/
+});*
 setInterval(function(){
 	var clients = findClientsSocket();
 	
 },1000);
-
-function sendupdates(){
+*function sendupdates(){
 	//var clients = findClientsSocket();
 	//var clients = Object.keys(io.sockets.sockets);
 	var plays = [];
@@ -45,8 +43,8 @@ function sendupdates(){
 		//	if (j !== i)
 		//		others.push(clients[j]);
 		clients[i].emit("getplayers",plays);
-	}*/
-}
+	}*
+}*/
 setInterval(function(){
 	for (var a in accounts)
 		if (a !== "sets" && accounts[a].online)
@@ -99,7 +97,7 @@ io.on('connection', function(socket){
 		hostq.push(socket);
 	}*/
 	socketq.push(socket);
-	socket.emit("initworld",worlddata);
+	//socket.emit("initworld",worlddata);
 	socket.on("gooffline",function(username){
 		socket.disconnect();
 		entitydatas[username] = false;
@@ -119,12 +117,13 @@ io.on('connection', function(socket){
 		//accounts[data.username] = {password:data.password};
 		if (accounts[data.username].online)
 		return socket.emit("alreadyonline");
-		socket.emit("enterserver",{p:players[data.username],w:worlddata});
-		socket.emit("updateworld",worlddata);
+		socket.emit("enterserver",{username:data.username,account:accounts[data.username]});//,w:worlddata});
+		//socket.emit("updateworld",worlddata);
 		socket.emit("tilechanges",tiledatas);
 		//socket.emit("getentities",entitydatas);
 		//io.emit("playerjoined",players[data.username]);
 		accounts[data.username].online = true;
+		entitydatas[data.username] = accounts[data.username].save;
 	});
 	socket.on("collectentities",function(){
 		socket.emit("getentities",entitydatas);
@@ -135,30 +134,33 @@ io.on('connection', function(socket){
 	socket.on("register",function(data){
 		if (typeof accounts[data.username] !== "undefined")
 		return socket.emit("usertaken");
-		accounts[data.username] = {password:data.password,online:false,inactivity:0};
+		accounts[data.username] = {password:data.password,online:false,inactivity:0,save:{}};
 		socket.emit("accountregistered",data);
 	});
-	socket.on("saveplayer",function(data){
+	/*socket.on("saveplayer",function(data){
 		players[data.username] = data;
 	});
 	socket.on("saveplayerloc",function(data){
 		if (!players[data.username])	return;
 		players[data.username].loc = data.loc;
 		//players[data.username].saying = data.saying;
-	});
+	});*/
 	socket.on("removeentity",function(id){
 		entitydatas[id] = false;
+		if (accounts[id])	accounts[id].online = false;
 		//io.emit("removeentity",id);
 		io.emit("getentities",entitydatas);
 	});
 	socket.on("removeentities",function(ids){
-		console.log(ids);
-		for (var i = 0; i < ids.length; i++)
+		for (var i = 0; i < ids.length; i++){
+			if (accounts[id])	accounts[id].online = false;
+			//delete entitydatas[ids[i]];// = false;
 			entitydatas[ids[i]] = false;
+		}
 		//io.emit("removeentity",id);
 		io.emit("getentities",entitydatas);
 	});
-	socket.on("regchanges",function(data){
+	/*socket.on("regchanges",function(data){
 		for (var i = 0; i < data.length; i++)
 			worlddata.changes[data[i].key] = data[i].changes;
 		//data.unshift(worlddata.ups)
@@ -174,10 +176,10 @@ io.on('connection', function(socket){
 		JSON.stringify(data) == 
 		JSON.stringify(worlddata.changes)
 		)	return console.log("same");
-		*/worlddata.changes = data;
+		*worlddata.changes = data;
 		worlddata.ups++;
 		//sendupdates();
-	});
+	});*/
 	socket.on("tilechange",function(data){
 		tiledatas[data.loc] = data.type;
 		socket.broadcast.emit("tilechange",data);
@@ -192,13 +194,23 @@ io.on('connection', function(socket){
 		//console.log(entitydatas[data.id]);
 		//socket.broadcast.emit("newentity",data);
 	});
-	socket.on("playerspeak",function(str){
+	/*socket.on("playerspeak",function(str){
 		socket.broadcast.emit("playerspeak",str);
-	});
+	});*/
 	socket.on("saveentities",function(data){
 		//return;
 		//if (socket !== host)return;
-		data.forEach((e)=>{if (e&&e.id && entitydatas[e.id]!== false)entitydatas[e.id] = e;});
+		
+		data.filter((e)=>(e && e.id && entitydatas[e.id] !== false)).forEach((e)=>{
+			//if (e&&e.id)
+				entitydatas[e.id] = e;
+				if (accounts[e.id])
+					for (p in e)
+						if (p !== "sets")
+							accounts[e.id].save[p] = e[p];
+					
+				//if (accounts[e.id])	accounts[e.id].online = false;
+			});
 		//socket.broadcast.emit("getentities",entitydatas);
 		//socket.emit("getentities",entitydatas);
 	});
@@ -219,25 +231,27 @@ io.on('connection', function(socket){
 		//host && host.emit("updateentity",data);
 		//return;
 		//if (socket !== host && data.type !== "Player")return;
-		if (entitydatas[data.id] == false){
-			console.log("no save");
-			return;
+		if (data.type == "Player"){
+			if (accounts[data.id] && !accounts[data.id].save)
+				accounts[data.id].save = {};
+			for (p in data)
+				if (p !== "sets")
+					accounts[data.id].save[p] = data[p];
 		}
 		if (!entitydatas[data.id])
 			entitydatas[data.id] = {};
 		for (var p in data)
-			if (p !== "sets" && data[p]){ // } && !entitydatas[data.id].changed){
+			if (p !== "sets" && data[p]) // } && !entitydatas[data.id].changed){
 				entitydatas[data.id][p] = data[p];
-			}
 			
 		//entitydatas[data.id].changed = true;
 	});
-	socket.on("updateme",function(username){
+	/*socket.on("updateme",function(username){
 		/*for (var p in players)
 			if (p !== "sets")// && players[p].online)
 				players[p].online = false;
 			//plays.push(players[p]);
-		io.emit("pingactive");*/
+		io.emit("pingactive");*
 		//console.log(accounts);
 		if (!accounts[username]){
 			socket.emit("disconnectplox");
@@ -258,7 +272,7 @@ io.on('connection', function(socket){
 		//socket.emit("updateworld",worlddata);
 		socket.emit("getplayers",plays);
 		//socket.emit("updateself",plays);
-	});
+	});*
 	socket.on("givepriv",function(data){
 		//if (players[data.username])
 		//console.log(entitydatas[data.username]);
@@ -274,7 +288,7 @@ io.on('connection', function(socket){
 		for (var p in players)
 			if (p !== "sets" && players[p].online)
 				//plays.push(players[p]);
-				plays.push({username:players[p].username,privileges:players[p].privileges});*/
+				plays.push({username:players[p].username,privileges:players[p].privileges});*
 		//console.log(players[data.username]);
 		var d = entitydatas[data.username];
 		console.log(d);
@@ -294,16 +308,16 @@ io.on('connection', function(socket){
 		for (var p in players)
 			if (p !== "sets" && players[p].online)
 				plays.push(players[p]);
-		io.emit("changeme",plays);*/
-	});
+		io.emit("changeme",plays);*
+	});*
 	socket.on("playertarget",function(data){
 		socket.broadcast.emit("playertarget",data);
 	});
-	/*socket.on("removeplayer",function(username){
+	*socket.on("removeplayer",function(username){
 		if (players[username])
 			players[username].online = false;
-	});*/
-	/*socket.on("leave",function(data){
+	});*
+	*socket.on("leave",function(data){
 		players[data.playername] = data.playerdata;
 	});*/
 	socket.on('disconnect', function(){
@@ -323,7 +337,6 @@ io.on('connection', function(socket){
 		}*/
 	});
 });
-
 http.listen(port, function(){
 console.log('listening on '+port);
 });
