@@ -371,7 +371,8 @@ function UIFramework(){
 			//	this.get(this.curtab).hidden = true;
 			this.get(name).hidden = false;
 			//if (this.tabq[this.tabq.length-1]!==name)
-				this.tabq.push(name);
+			this.tabq.push(name);
+			this.get(name).onsettab && this.get(name).onsettab();
 		}
 		this.prevtab = function(){
 			if (this.tabq.length <= 1)	return;

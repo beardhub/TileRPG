@@ -81,8 +81,8 @@ function DrawingFramework(){
 		if (extras.boxcolor){
 			g.fillStyle = extras.boxcolor;
 			g.globalAlpha = extras.boxalpha || .6;
-			var bw = w+(extras.boxborder || 6);
-			var bh = h+(extras.boxborder || 6);
+			var bw = w*(extras.boxborder || 1.1);
+			var bh = h*(extras.boxborder || 1.1);
 			g.fillRect(x-bw/2+offx,y-bh/2+offy,bw,bh);
 		}
 		g.fillStyle = extras.textcolor || g.fillStyle;

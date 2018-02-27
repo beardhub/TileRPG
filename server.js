@@ -117,6 +117,8 @@ io.on('connection', function(socket){
 		//accounts[data.username] = {password:data.password};
 		if (accounts[data.username].online)
 		return socket.emit("alreadyonline");
+		socket.emit("loginsuccess");
+		if (data.lobby)	return;
 		socket.emit("enterserver",{username:data.username,account:accounts[data.username]});//,w:worlddata});
 		//socket.emit("updateworld",worlddata);
 		socket.emit("tilechanges",tiledatas);
@@ -124,6 +126,9 @@ io.on('connection', function(socket){
 		//io.emit("playerjoined",players[data.username]);
 		accounts[data.username].online = true;
 		entitydatas[data.username] = accounts[data.username].save;
+	});
+	socket.on("consoleadd",function(data){
+		socket.broadcast.emit("consoleadd",data);
 	});
 	socket.on("collectentities",function(){
 		socket.emit("getentities",entitydatas);

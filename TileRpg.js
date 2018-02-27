@@ -178,284 +178,337 @@ function TileRpgFramework(){
 		H.w = 1200;
 		H.h = 800;
 		H.container.stretchfit(H);
-		function Title(){
-			var t = new UI.DBox();
-			t.add(new (function(){
-				this.render = function(g){
-					g.font = "100px Arial";
-					g.fillStyle = "white";
-					Drw.drawCText(g, "TileRPG", 600,200);
-				}
-			})());
-			var bh = window.mobile?75:50;
-			var bw = window.mobile?300:200;
-			t.add(new UI.Button(600-bw/2,300,bw,bh).sets({color:"green",text:"Guest",onclick:function(){
-				Trpg.username = "Player"+Math.round((new Math.seedrandom(Date.now()))()*100000);
-				if (ConnectToServer()){
-					MultiplayerLogin(true);
-					Trpg.socket && Trpg.socket.emit("register",{username:Trpg.username,password:""});
-				} else StartGame(true);
-				this.container.remove(this);
-			}}));
-			t.add(new UI.Button(600-bw/2,400,bw,bh).sets({color:"purple",text:"Member",onclick:function(){
-				if (!ConnectToServer()) return StartGame(true);
-				H.newtab("MultiplayerLogin", MultiplayerLogin());H.settab("MultiplayerLogin");}}));
-			return t;
-		}
 		H.newtab("TitleMenu", Title());
-		function MultiplayerLogin(guest){
-			Trpg.guest = guest;
-			var bh = window.mobile?75:50;
-			var bw = window.mobile?300:200;
-			var m = new UI.DBox();
-			m.add(new (function(){
-				this.render = function(g){
-					g.font = "100px Arial";
-					g.fillStyle = "white";
-					Drw.drawCText(g, "Member Login", 600,200);
-				}
-			})());
-			var user, pass;
-			var uentry = new Utils.TextInput("alphanums");
-			var pentry = new Utils.TextInput("alphanums").setpassform(true);
-			H.add(uentry);
-			H.add(pentry);
-			m.add(user = new UI.Button(600-bw/2,300,bw,bh).sets({key:"1",onclick:function(){
-				if (window.mobile) uentry.text = prompt("Enter username") || "";
-				else uentry.focus();
-			}}));
-			m.add(pass = new UI.Button(600-bw/2,400,bw,bh).sets({key:"2",onclick:function(){
-				if (window.mobile) pentry.text = prompt("Enter password") || "";
-				else pentry.focus();
-			}}));
-			user.inrender = function(g){
-				var text = uentry.gettext();
-				g.font = ""+(window.mobile?45:30)+"px Arial";
-				if (text == "")
-					text = "Username";
-				var x = 5;
-				while(g.measureText(text).width > this.w-x)
-					x--;
-				Drw.drawCText(g,text,x,this.h/2,{alignx:"left",textcolor:"black"});	
-				if (uentry.hasfocus())this.bcolor = "white";else this.bcolor = "darkgrey";
-			}
-			pass.inrender = function(g){
-				var text = pentry.gettext();
-				g.font = ""+(window.mobile?45:30)+"px Arial";
-				if (text == "")
-					text = "Password";
-				var x = 5;
-				while(g.measureText(text).width > this.w-x)
-					x--;
-				Drw.drawCText(g,text,x,this.h/2,{alignx:"left",textcolor:"black"});	
-					if (pentry.hasfocus())this.bcolor = "white";else this.bcolor = "darkgrey";
-			}
-			uentry.focus();
-			uentry.onenter = 
-			uentry.ontab = function(){pentry.focus();}
-			pentry.ontab = function(){uentry.focus();}
-			pentry.onenter = function(){m.get("loginbtn").onclick();}
-			m.add(new UI.Button(600-bw/2,500,bw,bh).sets({color:"orange",text:"Login",key:"3",onclick:function(){
-				Trpg.socket.emit("trylogin",{username:uentry.gettext(),password:pentry.gettext(true)});pentry.clearfocus();
-			}}),"loginbtn");
-			m.add(new UI.Button(600-bw/2,600,bw,bh).sets({color:"yellow",text:"New Account",key:"4",onclick:function(){
-				if (uentry.gettext() == "")
-					alert("Username required (password optional)");
-				else Trpg.socket.emit("register",{username:uentry.gettext(),password:pentry.gettext(true)});
-			}}),"registerbtn");
-			m.add(new UI.Button(600-bw/2,700,bw,bh).sets({color:"darkgrey",text:"Back",key:"Escape",onclick:function(){
-				Trpg.socket.emit("gooffline");H.settab("TitleMenu");
-			}}));
-			Trpg.socket.on("failedlogin", function(){
-				alert("Login failed: incorrect username or password");
-			});
-			Trpg.socket.on("enterserver",function(data){
-				if (data && data.account && data.account.save && data.account.save.loc){
-					Trpg.player = new Trpg.Entities.Player(
-						new Trpg.WorldLoc().loadStr(data.account.save.loc),
-						data.username,
-						true,
-						Trpg.guest);
-				} else Trpg.player = new Trpg.Player(data.username,Trpg.guest);
-				StartGame(false);//, data);
-				if (data && data.account && data.account.save)
-					Trpg.player.load(data.account.save,true);
-				Trpg.socket.emit("saveentity",Trpg.player.save());
-				H.add(new Utils.Timer(0.1).start().setLoop(true).setAuto(true,function(){
-					Trpg.socket.emit("saveentities",Trpg.Entsaves.getq().map((s)=>s.s));
-					Trpg.Entsaves.empty();
-				}));
-			});
-			Trpg.socket.on("usertaken",function(){
-				alert("That username is taken, please chose another");
-			});
-			Trpg.socket.on("accountregistered",function(data){
-				!guest && alert("Your account has been created with username '"+data.username+"' and password '"+data.password+"'");
-				Trpg.player = new Trpg.Player(data.username,false,true,guest);
-				Trpg.socket.emit("trylogin",{username:data.username,password:data.password});
-			});
-			Trpg.socket.on("alreadyonline",function(){
-				alert("Login failed: that user is already logged in");
-			});
-			Trpg.socket.on("tilechange",function(data){
-				var t = new Trpg.Tiles[data.type](new Trpg.WorldLoc().loadStr(data.loc),true);
-				Trpg.world.tilechanges[t.loc.toStr()] = t.getState();
-			});
-			Trpg.socket.on("tilechanges",function(data){
-				for (var p in data)
-					if (p !== "sets"){
-						var t = new Trpg.Tiles[data[p]](new Trpg.WorldLoc().loadStr(p),true);
-						Trpg.world.tilechanges[t.loc.toStr()] = t.getState();
-					}
-			});
-			Trpg.socket.on("playerjoined",function(p){
-				Trpg.Console.add(p.username+" has logged in","cyan");
-			});
-			Trpg.socket.on("getentities",function(ents){
-				for (var p in ents){
-					if (p == "sets") continue
-					var e = Trpg.BoardC.get("Entities."+p);
-					if (e !== -1){
-						if (ents[p] === false){
-							if (e.type == "Player")
-								Trpg.Console.add(e.gettitle()+" has logged out","cyan");
-							Trpg.BoardC.get("Entities").remove(p);
-							if (p == Trpg.player.id) location.reload(true);
-							continue;
-						} else e.load(ents[p]);
-					}
-					else if (ents[p])
-						var newe = (new Trpg.Entities[ents[p].type](new Trpg.WorldLoc().loadStr(ents[p].loc),p));
-				}
-			});
-			Trpg.socket.on("playertarget",function(data){
-				var others = Trpg.Entities.getoftype("Player");
-				for (var i = 0; i < others.length; i++)
-					if (others[i].username == data.username)
-						others[i].settarget({loc:new Trpg.WorldLoc().loadStr(data.targetstr)});
-			});
-			Trpg.socket.on("disconnectplox",function(){
-				location.reload(true);
-			});
-			Trpg.socket.on("newentity",function(data){
-				//server to here
-				//new Trpg.Entities[data.type](new Trpg.WorldLoc().loadStr(data.loc),data.id).load(data);
-			});
-			Trpg.socket.on("removeentity",function(id){
-				var e = Trpg.BoardC.get("Entities."+id);
-				if (e !== -1){
-					e.removeme();
-					//alert("remove");
-				}
-			});
-			Trpg.socket.on("updateentity",function(data){
-				var e = Trpg.BoardC.get("Entities."+data.id);
-				if (e !== -1)
-					e.load(data);
-					//e.removeme();
-			});
-			Trpg.socket.on("affectentity",function(data){
-				var e = Trpg.BoardC.get("Entities."+data.id);
-				if (e == -1)return;
-				e[data.func].apply(e,data.args);
-				Trpg.Entsaves.add({s:e.save()});
-			});
-			return m;
-		}
-		function Gameplay(){
-			var g = new UI.DBox();
-			var b,h,i,s,m,M,I;
-			Trpg.boardui = new UI.DBox(0,0,800,800);
-			Trpg.boardui.add(b = new UI.DBox(0,0,800,800),"Board");
-			b.add(new UI.DBox(),"Tiles");
-			b.add(new UI.DBox(),"Entities");
-			Trpg.BoardC = b;
-			Trpg.Entsaves = new UI.DBox();
-			g.add(Trpg.boardui,"BoardUI");
-			g.add(m = new UI.DBox(800,0,400,350),"Minimap");
-			g.add(I = new UI.DBox(800,350,400,450),"InvTabs");
-			I.newtab("Invent",i = new UI.DBox(0,0,322,450));
-			I.newtab("Skills",s = new UI.DBox(0,0,322,450));
-			I.add(new UI.Button(326,6,64,64*3.5).sets({inrender:function(g){
-				g.font = "35px Arial";
-				g.fillStyle = "black";
-				Drw.drawBoxText(g, "I N V E N T", 32, 32, 32);
-			},onclick:function(){I.settab("Invent")}}));
-			I.add(new UI.Button(326,64*3.5+6,64,64*3.5).sets({inrender:function(g){
-				g.font = "35px Arial";
-				g.fillStyle = "black";
-				Drw.drawBoxText(g, "S K I L L S", 32, 32, 32);
-			},onclick:function(){I.settab("Skills")}}));
-			I.settab("Invent");
-			s.add({render:function(g){g.fillStyle = "black";g.font = "30px Arial";
-				Drw.drawCText(g,"Coming soon",this.container.w/2,this.container.h/2)}});
-			g.add(M = new UI.DBox(),"Menus");
-			g.add(makeShortcut(new UI.DBox(),"RC"));
-			var checkover = {
-				mousemove:function(e,m){
-					if (!this.container.mouseonbox(m))
-						this.container.empty();
-				}
-			}
-			RC.onempty = function(){
-				RC.add([],"actionslist");
-				RC.add(checkover);
-				RC.hidden = true;
-			}
-				RC.add([],"actionslist");
-				RC.add(checkover);
-			RC.open = function(){
-			this.hidden = false;
-				var m = Ms.getMouse();
-				var as = RC.get("actionslist");
-				RC.x = g.boxx(m.x)-20;
-				RC.y = g.boxy(m.y)-20;
-				RC.w = 100;
-				var btns = [];
-				for (var i = 0; i < as.length; i++){
-					btns.push(new UI.Button(0,50*i,100,50).sets({
-						onclick:(function(a){
-							return function(){
-								a.func.call(a.owner);
-								RC.empty();
-								return true;
-							}
-						})(as[i]),text:capitalize(as[i].text)
-					}));
-					RC.h+=50;
-				}
-				RC.add({render:function(g){
-					for (var i = 0; i < btns.length; i++)
-						btns[i].adjust(g);
-					var w = 0;
-					for (var i = 0; i < btns.length; i++)
-						if (btns[i].w > w)
-							w = btns[i].w;
-					for (var i = 0; i < btns.length; i++)
-						btns[i].w = w;
-					RC.w = w;
-				}});
-				for (var i = 0; i < btns.length; i++)
-					RC.add(btns[i]);
-			}
-			Trpg.Home.add(Trpg.Timers = new UI.DBox());
-			M.font = "20px Arial";
-			i.color = "rgb(96,96,96)";
-			b.bcolor = b.color = m.color = "black";
-			//#mapm.add(Trpg.Map);
-			return g;
-		}
+		H.newtab("Lobby", Lobby());
 		H.newtab("Gameplay",Gameplay());
-		H.settab("TitleMenu")
-		function StartGame(newgame,data){
-			if (!Trpg.player)
-				Trpg.player = new Trpg.Player(Trpg.username,false,true,Trpg.guest);
-			new Trpg.World("World 3");
-			H.add(Trpg.board,"Gameplay.BoardUI.Board.");
-			H.add(Trpg.invent,"Gameplay.InvTabs.Invent.");
-			Trpg.socket && Trpg.socket.emit("collectentities");
-			H.settab("Gameplay");
+		H.settab("TitleMenu");
+	}
+	function Title(){
+		var box = new UI.DBox();
+		box.add(new (function(){
+			this.render = function(g){
+				g.font = "100px Arial";
+				g.fillStyle = "white";
+				Drw.drawCText(g, "TileRPG", 600,200);
+			}
+		})());
+		var bh = window.mobile?75:50;
+		var bw = window.mobile?300:200;
+		box.add(new UI.Button(600-bw/2,300,bw,bh).sets({color:"green",text:"Guest",onclick:function(){
+			Trpg.username = "Player"+Math.round((new Math.seedrandom(Date.now()))()*100000);
+			if (ConnectToServer()){
+				Trpg.guest = true;
+				MultiplayerLogin();
+				Trpg.acc = {username:Trpg.username,password:"",lobby:true}
+				Trpg.socket.emit("register",Trpg.acc);
+			} else StartGame();
+			this.removeme();
+		}}));
+		box.add(new UI.Button(600-bw/2,400,bw,bh).sets({color:"purple",text:"Member",onclick:function(){
+			if (!ConnectToServer()) return StartGame();
+			Trpg.Home.newtab("MultiplayerLogin", MultiplayerLogin());Trpg.Home.settab("MultiplayerLogin");}}));
+		return box;
+	}
+	function MultiplayerLogin(){
+		var box = new UI.DBox();
+		var guest = Trpg.guest;
+		var bh = window.mobile?75:50;
+		var bw = window.mobile?300:200;
+		box.add(new (function(){
+			this.render = function(g){
+				g.font = "100px Arial";
+				g.fillStyle = "white";
+				Drw.drawCText(g, "Member Login", 600,200);
+			}
+		})());
+		var user, pass;
+		var uentry = new Utils.TextInput("alphanums");
+		var pentry = new Utils.TextInput("alphanums").setpassform(true);
+		Trpg.Home.add(uentry);
+		Trpg.Home.add(pentry);
+		box.add(user = new UI.Button(600-bw/2,300,bw,bh).sets({key:"1",onclick:function(){
+			if (window.mobile) uentry.text = prompt("Enter username") || "";
+			else uentry.focus();
+		}}));
+		box.add(pass = new UI.Button(600-bw/2,400,bw,bh).sets({key:"2",onclick:function(){
+			if (window.mobile) pentry.text = prompt("Enter password") || "";
+			else pentry.focus();
+		}}));
+		user.inrender = function(g){
+			var text = uentry.gettext();
+			g.font = ""+(window.mobile?45:30)+"px Arial";
+			if (text == "")
+				text = "Username";
+			var x = 5;
+			while(g.measureText(text).width > this.w-x)
+				x--;
+			Drw.drawCText(g,text,x,this.h/2,{alignx:"left",textcolor:"black"});	
+			if (uentry.hasfocus())this.bcolor = "white";else this.bcolor = "darkgrey";
 		}
+		pass.inrender = function(g){
+			var text = pentry.gettext();
+			g.font = ""+(window.mobile?45:30)+"px Arial";
+			if (text == "")
+				text = "Password";
+			var x = 5;
+			while(g.measureText(text).width > this.w-x)
+				x--;
+			Drw.drawCText(g,text,x,this.h/2,{alignx:"left",textcolor:"black"});	
+				if (pentry.hasfocus())this.bcolor = "white";else this.bcolor = "darkgrey";
+		}
+		uentry.focus();
+		uentry.onenter = 
+		uentry.ontab = function(){pentry.focus();}
+		pentry.ontab = function(){uentry.focus();}
+		pentry.onenter = function(){box.get("loginbtn").onclick();}
+		box.add(new UI.Button(600-bw/2,500,bw,bh).sets({color:"orange",text:"Login",key:"3",onclick:function(){
+			Trpg.acc = {username:uentry.gettext(),password:pentry.gettext(true),lobby:true}
+			Trpg.socket.emit("trylogin",Trpg.acc);
+			//pentry.clearfocus();
+		}}),"loginbtn");
+		box.add(new UI.Button(600-bw/2,600,bw,bh).sets({color:"yellow",text:"New Account",key:"4",onclick:function(){
+			if (uentry.gettext() == "")
+				alert("Username required (password optional)");
+			else Trpg.socket.emit("register",{username:uentry.gettext(),password:pentry.gettext(true)});
+		}}),"registerbtn");
+		box.add(new UI.Button(600-bw/2,700,bw,bh).sets({color:"darkgrey",text:"Back",key:"Escape",onclick:function(){
+			Trpg.socket.emit("gooffline");Trpg.Home.settab("TitleMenu");
+		}}));
+		Trpg.socket.on("failedlogin", function(){
+			alert("Login failed: incorrect username or password");
+		});
+		Trpg.socket.on("loginsuccess", function(){
+			Trpg.Home.settab("Lobby");
+		});
+		Trpg.socket.on("usertaken",function(){
+			alert("That username is taken, please chose another");
+		});
+		Trpg.socket.on("accountregistered",function(data){
+			!Trpg.guest && alert("Your account has been created with username '"+data.username+"' and password '"+data.password+"'");
+			//Trpg.player = new Trpg.Player(data.username,false,true,Trpg.guest);
+			Trpg.acc = {username:data.username,password:data.password,lobby:true}
+			Trpg.socket.emit("trylogin",Trpg.acc);
+		});
+		Trpg.socket.on("alreadyonline",function(){
+			alert("Login failed: that user is already logged in");
+		});
+		Trpg.socket.on("disconnectplox",function(){
+			location.reload(true);
+		});
+		return box;
+	}
+	function MultiplayerSetup(){
+		Trpg.socket.on("enterserver",function(data){
+			MultiplayerSetup();
+			if (data && data.account && data.account.save && data.account.save.loc){
+				Trpg.player = new Trpg.Entities.Player(
+					new Trpg.WorldLoc().loadStr(data.account.save.loc),
+					data.username,
+					true,
+					Trpg.guest);
+			} else Trpg.player = new Trpg.Player(data.username,Trpg.guest);
+			StartGame();
+			if (data && data.account && data.account.save)
+				Trpg.player.load(data.account.save,true);
+			Trpg.socket.emit("saveentity",Trpg.player.save());
+			Trpg.Home.add(new Utils.Timer(0.1).start().setLoop(true).setAuto(true,function(){
+				Trpg.socket.emit("saveentities",Trpg.Entsaves.getq().map((s)=>s.s));
+				Trpg.Entsaves.empty();
+			}));
+		});
+		Trpg.socket.on("tilechange",function(data){
+			var t = new Trpg.Tiles[data.type](new Trpg.WorldLoc().loadStr(data.loc),true);
+			Trpg.world.tilechanges[t.loc.toStr()] = t.getState();
+		});
+		Trpg.socket.on("tilechanges",function(data){
+			for (var p in data)
+				if (p !== "sets"){
+					var t = new Trpg.Tiles[data[p]](new Trpg.WorldLoc().loadStr(p),true);
+					Trpg.world.tilechanges[t.loc.toStr()] = t.getState();
+				}
+		});
+		Trpg.socket.on("playerjoined",function(p){
+			Trpg.Console.add(p.username+" has logged in","cyan");
+		});
+		Trpg.socket.on("getentities",function(ents){
+			for (var p in ents){
+				if (p == "sets") continue
+				var e = Trpg.BoardC.get("Entities."+p);
+				if (e !== -1){
+					if (ents[p] === false){
+						if (e.type == "Player")
+							Trpg.Console.add(e.gettitle()+" has logged out","cyan");
+						Trpg.BoardC.get("Entities").remove(p);
+						if (p == Trpg.player.id) location.reload(true);
+						continue;
+					} else e.load(ents[p]);
+				}
+				else if (ents[p])
+					var newe = (new Trpg.Entities[ents[p].type](new Trpg.WorldLoc().loadStr(ents[p].loc),p));
+			}
+		});
+		Trpg.socket.on("playertarget",function(data){
+			var others = Trpg.Entities.getoftype("Player");
+			for (var i = 0; i < others.length; i++)
+				if (others[i].username == data.username)
+					others[i].settarget({loc:new Trpg.WorldLoc().loadStr(data.targetstr)});
+		});
+		Trpg.socket.on("newentity",function(data){
+			//server to here
+			//new Trpg.Entities[data.type](new Trpg.WorldLoc().loadStr(data.loc),data.id).load(data);
+		});
+		Trpg.socket.on("removeentity",function(id){
+			var e = Trpg.BoardC.get("Entities."+id);
+			if (e !== -1){
+				e.removeme();
+				//alert("remove");
+			}
+		});
+		Trpg.socket.on("updateentity",function(data){
+			var e = Trpg.BoardC.get("Entities."+data.id);
+			if (e !== -1)
+				e.load(data);
+				//e.removeme();
+		});
+		Trpg.socket.on("affectentity",function(data){
+			var e = Trpg.BoardC.get("Entities."+data.id);
+			if (e == -1)return;
+			e[data.func].apply(e,data.args);
+			Trpg.Entsaves.add({s:e.save()});
+		});
+	}
+	function Gameplay(){
+		var box = new UI.DBox();
+		var b,i,s,m,I;
+		Trpg.boardui = new UI.DBox(0,0,800,800);
+		Trpg.boardui.add(b = new UI.DBox(0,0,800,800),"Board");
+		b.add(new UI.DBox(),"Tiles");
+		b.add(new UI.DBox(),"Entities");
+		Trpg.BoardC = b;
+		Trpg.Entsaves = new UI.DBox();
+		box.add(Trpg.boardui,"BoardUI");
+		box.add(m = new UI.DBox(800,0,400,350),"Minimap");
+		box.add(I = new UI.DBox(800,350,400,450),"InvTabs");
+		I.newtab("Invent",i = new UI.DBox(0,0,322,450));
+		I.newtab("Skills",s = new UI.DBox(0,0,322,450));
+		I.add(new UI.Button(326,6,64,64*3.5).sets({inrender:function(g){
+			g.font = "35px Arial";
+			g.fillStyle = "black";
+			Drw.drawBoxText(g, "I N V E N T", 32, 32, 32);
+		},onclick:function(){I.settab("Invent")}}));
+		I.add(new UI.Button(326,64*3.5+6,64,64*3.5).sets({inrender:function(g){
+			g.font = "35px Arial";
+			g.fillStyle = "black";
+			Drw.drawBoxText(g, "S K I L L S", 32, 32, 32);
+		},onclick:function(){I.settab("Skills")}}));
+		I.settab("Invent");
+		s.add({render:function(g){g.fillStyle = "black";g.font = "30px Arial";
+			Drw.drawCText(g,"Coming soon",this.container.w/2,this.container.h/2)}});
+		box.add(makeShortcut(new UI.DBox(),"RC"));
+		var checkover = {
+			mousemove:function(e,m){
+				if (!this.container.mouseonbox(m))
+					this.container.empty();
+			}
+		}
+		RC.onempty = function(){
+			RC.add([],"actionslist");
+			RC.add(checkover);
+			RC.hidden = true;
+		}
+			RC.add([],"actionslist");
+			RC.add(checkover);
+		RC.open = function(){
+		this.hidden = false;
+			var m = Ms.getMouse();
+			var as = RC.get("actionslist");
+			RC.x = this.container.boxx(m.x)-20;
+			RC.y = this.container.boxy(m.y)-20;
+			RC.w = 100;
+			var btns = [];
+			for (var i = 0; i < as.length; i++){
+				btns.push(new UI.Button(0,50*i,100,50).sets({
+					onclick:(function(a){
+						return function(){
+							a.func.call(a.owner);
+							RC.empty();
+							return true;
+						}
+					})(as[i]),text:capitalize(as[i].text)
+				}));
+				RC.h+=50;
+			}
+			RC.add({render:function(g){
+				for (var i = 0; i < btns.length; i++)
+					btns[i].adjust(g);
+				var w = 0;
+				for (var i = 0; i < btns.length; i++)
+					if (btns[i].w > w)
+						w = btns[i].w;
+				for (var i = 0; i < btns.length; i++)
+					btns[i].w = w;
+				RC.w = w;
+			}});
+			for (var i = 0; i < btns.length; i++)
+				RC.add(btns[i]);
+		}
+		Trpg.Home.add(Trpg.Timers = new UI.DBox());
+		M.font = "20px Arial";
+		i.color = "rgb(96,96,96)";
+		b.bcolor = b.color = m.color = "black";
+		//#mapm.add(Trpg.Map);
+		return box;
+	}
+	function Lobby(){
+		var box = new UI.DBox();
+		var msgentry = new Utils.TextInput("allchars");
+		msgentry.onenter = function(){
+			Trpg.Console.add(this.text,false,Trpg.acc.username);
+			Trpg.socket && Trpg.socket.emit("consoleadd",{m:this.text,u:Trpg.acc.username});
+			this.clear();
+		}
+		box.onsettab = function(){
+			Trpg.socket.on("consoleadd",function(data){
+				Trpg.Console.add(data.m,data.c,data.u);
+			});
+			msgentry.focus();
+		}
+		Trpg.Home.add(msgentry);
+		box.add(new (function(){
+			this.render = function(g){
+				g.font = "100px Arial";
+				g.fillStyle = "white";
+				Drw.drawCText(g, "Lobby", 600,200);
+				g.font = "35px Arial";
+				var h = g.measureText("M").width*1.1;
+				g.translate(10,this.container.container.h-10);
+				Drw.drawCText(g,Trpg.acc.username+": "+msgentry.text+"*",0,0,
+					{alignx:"left",aligny:"bottom",boxcolor:"white",textcolor:"black"});
+				g.translate(0,-h);
+				Trpg.Console.render(g);
+			}
+		})());
+		var bh = window.mobile?150:100;
+		var bw = window.mobile?600:400;
+		box.add(new UI.Button(600-bw/2,400,bw,bh).sets({text:"Click here to play",color:"#C70000",
+			onclick:function(){
+				MultiplayerSetup();
+				Trpg.acc.lobby = false;
+				Trpg.socket.emit("trylogin",Trpg.acc);
+				//if (window.mobile)
+				//	document.body.requestFullscreen();
+			}
+		}));
+		return box;
+	}
+	function StartGame(){
+		if (!Trpg.player)
+			Trpg.player = new Trpg.Player(Trpg.username,false,true,Trpg.guest);
+		new Trpg.World("World 3");
+		Trpg.Home.add(Trpg.board,"Gameplay.BoardUI.Board.");
+		Trpg.Home.add(Trpg.invent,"Gameplay.InvTabs.Invent.");
+		Trpg.socket && Trpg.socket.emit("collectentities");
+		Trpg.Home.settab("Gameplay");
 	}
 	function ConnectToServer(){
 		try {
@@ -1008,16 +1061,16 @@ function TileRpgFramework(){
 			this.history.push(msg(message,user,color));
 			this.vhistory.push(msg(message,user,color));
 			this.last = message;
-			if (user == Trpg.player.username)
+			if (Trpg.player && user == Trpg.player.username)
 				this.phistory.push(msg(message,user,color));
 		}
 		this.render = function(g){
 			var texts = this.vhistory;
-			var h = 27;
+			var h = g.measureText("M").width*1.1;
 			for (var i = 0; i < texts.length && i < 10; i++){
 				var u = texts[texts.length-i-1].u || "";
 				if (u !== "")	u+=": ";
-				Drw.drawCText(g,u+texts[texts.length-i-1].m,3,-h*i-4,
+				Drw.drawCText(g,u+texts[texts.length-i-1].m,0,-h*i,
 					{alignx:"left",aligny:"bottom",boxcolor:texts[texts.length-i-1].c || "white",textcolor:"black"});
 			}
 		}
@@ -1989,7 +2042,7 @@ function TileRpgFramework(){
 			Combatable.call(pro);
 			pro.type = p;
 		}
-		["Man","Cow","Guard","Player"].forEach((p)=>{	});
+		//["Man","Cow","Guard","Player"].forEach((p)=>{	});
 		this.Arrow = function(wl,id,orig,ang,targs){
 			this.x = wl.xx();
 			this.y = wl.yy();
@@ -2262,6 +2315,7 @@ function TileRpgFramework(){
 			return function(){
 				this.Item = {
 					superinit:superinit,
+					inrender:inrender,
 					render:render,
 				}
 				return this;
@@ -2269,14 +2323,22 @@ function TileRpgFramework(){
 		})();
 		function I(x,y){
 			this.Clickable.superinit.call(this,x,y,32,32);
+			this.Actionable.superinit.call(this);
 			this.Item.superinit.call(this);
+			this.img = this.type;
 		}
 		this.Coins = function(amt){
 			I.call(this);
 			this.stackable = true;
 			this.amt = amt || 1;
 		}
-		
+		for (var p in this){
+			var pro = this[p].prototype;
+			UI.Clickable.call(pro);
+			act.call(pro);
+			Item.call(pro);
+			pro.type = p;
+		}
 		return;
 		function Default(){
 			this.type = "default";
