@@ -3647,7 +3647,7 @@ function TileRpgFramework(){
 			this.speed = 100;
 			this.online = true;
 			this.actions.examine = function(){
-				Trpg.Console.add(this.gettitle()+this.privileges);
+				Trpg.Console.add(this.gettitle());
 			}
 			this.equipment = {
 				helm:-1,
