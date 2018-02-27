@@ -499,6 +499,24 @@ function TileRpgFramework(){
 				//	document.body.requestFullscreen();
 			}
 		}));
+		if (window.mobile)
+		box.init = function(){
+			box.add(new UI.Button(0,0,150,150).sets({
+				onclick:function(){
+					msgentry.text = prompt("Enter Text");
+				},init:function(){
+					var c = this.container.container;
+					console.log(c);
+					this.x = this.container.boxx(c.screenx(c.w))-150;
+					this.y = this.container.boxy(c.screeny(c.h))-150;
+				},inrender:function(g){
+					g.fillStyle = "black";
+					g.font = "35px Arial";
+					Drw.drawCText(g,"Enter",this.w/2,this.h/3);
+					Drw.drawCText(g,"Text",this.w/2,this.h/3*2);
+				}
+			}));
+		}
 		return box;
 	}
 	function StartGame(){
