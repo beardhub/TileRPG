@@ -503,7 +503,9 @@ function TileRpgFramework(){
 		box.init = function(){
 			box.add(new UI.Button(0,0,150,150).sets({
 				onclick:function(){
-					msgentry.text = prompt("Enter Text");
+					var text = prompt("Enter Text");
+					Trpg.Console.add(text,false,Trpg.acc.username);
+					Trpg.socket && Trpg.socket.emit("consoleadd",{m:text,u:Trpg.acc.username});
 				},init:function(){
 					var c = this.container.container;
 					console.log(c);
