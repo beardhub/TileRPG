@@ -1146,10 +1146,10 @@ function TileRpgFramework(){
 					}
 				}));
 			}
-			if (window.mobile){
-				bui.add(new UI.Button(bui.w-100-5,bui.h-100-5,100,100).sets({
+			if (window.mobile || true){
+				bui.add(new UI.Button(bui.w-100-5,bui.h-100-5,100,100).sets({rl:1,
 					onclick:function(){
-						var text = prompt("Enter Text");
+						var text = null;//prompt("Enter Text");
 						if (text == null)
 							return true;
 						if (text.charAt(0) == "/")

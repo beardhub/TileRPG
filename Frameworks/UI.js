@@ -51,7 +51,6 @@ function UIFramework(){
 					return this.leftdown && this.leftdown(this.dx(m.x),this.dy(m.y));
 				if (e.button == 2)
 					return this.rightdown && this.rightdown(this.dx(m.x),this.dy(m.y));
-				//return true;
 			} return false;
 			/*var dx = this.dx(m.x);
 			var dy = this.dy(m.y);
@@ -91,6 +90,9 @@ function UIFramework(){
 	})();
 	this.Button = function(x,y,w,h){
 		this.Clickable.superinit.call(this,x,y,w,h);
+		this.leftdown = function(){
+			return true;
+		}
 		this.leftclick = function(dx,dy){
 			return this.onclick.call(this);
 		}
