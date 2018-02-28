@@ -164,7 +164,7 @@ function UIFramework(){
 		this.h = h || 0;
 		this.alphamod = 1;
 		this.cropped = this.w>0&&this.h>0;
-		this.transparent = false;
+		this.transparent = false;//!this.cropped;
 		this.color = "clear";
 		this.bcolor = "clear";
 		this.pcolor = "black";

@@ -389,10 +389,67 @@ function TileRpgFramework(){
 		b.add(new UI.DBox(),"Tiles");
 		b.add(new UI.DBox(),"Entities");
 		b.add(new UI.DBox(),"Items");
+		var catcher;
+		Trpg.Home.add(catcher = new UI.DBox(0,0,1200,800),"Catcher");
 		Trpg.BoardC = b;
 		b.get("Tiles").rl = 1;
 		b.get("Items").rl = 2;
 		b.get("Entities").rl = 3;
+		catcher.rl = 1;
+		b.hidden = true;
+		catcher.add(new UI.Button(0,0,150,75).sets({
+			text:"Cancel",hidden:true,
+			onclick:function(){
+				var that = catcher.get("zoomtap");
+				that.zoombox.get("camfollow").frozen = false;
+				that.zoombox.get("camfollow").update();
+				that.zoombox.camera.zoom(.5);
+				that.zoombox = -1;
+				this.hidden = true;
+			}
+		}),"cancelzoom");
+		catcher.add({boxes:[],zoomed:false,zoombox:-1,
+			mousedown:function(e,m){
+				if (!window.mobile)return false;
+				if (this.zoomed && this.zoombox !== -1){
+					var that = this;
+					Trpg.Timers.add(new Utils.Timer(0).start().setAuto(true,function(){
+						catcher.get("cancelzoom").onclick();
+						/*that.zoombox.get("camfollow").frozen = false;
+						that.zoombox.get("camfollow").update();
+						that.zoombox.camera.zoom(.5);
+						that.zoombox = -1;
+						catcher.get("cancelzoom").hidden = true;*/
+					}).setKilloncomp(true));
+					return false;
+				}
+				var bs = this.boxes;
+				for (var i = 0; i < bs.length; i++){
+					//alert(bs[i]);
+					var b = bs[i];
+					if (b.mouseonbox(m) && !b.hidden){
+						b.camera.zoom(2);//frozen = true;
+						b.camera.x = b.boxx(m.x);
+						b.camera.y = b.boxy(m.y);
+						b.get("camfollow").frozen = true;
+						//Trpg.board.viewsize+=2;
+						this.zoomed = true;
+						this.zoombox = b;
+						catcher.get("cancelzoom").hidden = false;
+						return true;
+					}
+				}
+				return false;
+				//if (!this.container.mouseonbox(m))	return;
+				//var b = Trpg.BoardC;
+				//b.get("camfollow").hidden = true;
+			}
+		},"zoomtap");
+		var bs = catcher.get("zoomtap").boxes;
+		bs.push(b);
+		//b.add(new UI.Button(0,350,100,100).sets({
+			
+		//}));
 		//b.makescrollable();
 		Trpg.Entsaves = new UI.DBox();
 		box.add(Trpg.boardui,"BoardUI");
@@ -400,6 +457,7 @@ function TileRpgFramework(){
 		box.add(I = new UI.DBox(800,350,400,450),"InvTabs");
 		//I.makescrollable();
 		I.newtab("Invent",i = Invent.call(new UI.DBox(0,0,322,450)));
+//		bs.push(i);
 		I.newtab("Skills",s = new UI.DBox(0,0,322,450));
 		I.add(new UI.Button(326,6,64,64*3.5).sets({inrender:function(g){
 			g.font = "35px Arial";
@@ -538,6 +596,7 @@ function TileRpgFramework(){
 		if (!Trpg.player)
 			Trpg.player = new Trpg.Player(Trpg.username,false,true,Trpg.guest);
 		new Trpg.World("World 3");
+		Trpg.BoardC.hidden = false;
 		Trpg.Home.add(Trpg.board,"Gameplay.BoardUI.Board.");
 		//Trpg.Home.add(Trpg.invent,"Gameplay.InvTabs.Invent.");
 		Trpg.socket && Trpg.socket.emit("collectentities");
@@ -1448,7 +1507,7 @@ function TileRpgFramework(){
 			this.dx = 0;
 			this.dy = 0;
 			this.container.camera.zoomto(1/(this.viewsize-1)/64*this.container.w);
-			this.container.add(new UI.Follow(this.container.camera,Trpg.player,function(t){return t.loc.xx()},function(t){return t.loc.yy()},32));
+			this.container.add(new UI.Follow(this.container.camera,Trpg.player,function(t){return t.loc.xx()},function(t){return t.loc.yy()},32),"camfollow");
 			this.container.add(this.textinp = new Utils.TextInput("allchars"));
 			this.textinp.onenter = function(){
 				var text = that.textinp.gettext();
