@@ -217,8 +217,9 @@ function UtilsFramework(){
 		this.running = false;
 		this.loop = false;
 		this.autocons = false;
-		this.setKilloncomp = function(kill){
+		this.setKilloncomp = function(kill, onkill){
 			this.killoncomp = kill || false;
+			this.onkill = onkill;
 			return this;
 		}
 		this.setLoop = function(loop){
@@ -296,9 +297,9 @@ function UtilsFramework(){
 				if (this.consume())
 					if (typeof this.oncomp == "function"){
 						this.oncomp();
-						if (this.killoncomp) 
-							this.removeme();
-							//this.container.remove(this);
+						if (this.killoncomp)
+							if (!this.onkill || this.onkill && this.onkill())
+								this.removeme();
 					}
 		}
 	}

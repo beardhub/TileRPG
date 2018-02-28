@@ -128,7 +128,7 @@ io.on('connection', function(socket){
 		entitydatas[data.username] = accounts[data.username].save;
 	});
 	socket.on("consoleadd",function(data){
-		socket.broadcast.emit("consoleadd",data);
+		io.emit("consoleadd",data);
 	});
 	socket.on("collectentities",function(){
 		socket.emit("getentities",entitydatas);

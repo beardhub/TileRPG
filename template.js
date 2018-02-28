@@ -134,7 +134,7 @@ function assetsbit(){
 	Ast.loadImage("steelbar","SteelBar.png");
 	Ast.loadImage("mithrilbar","MithrilBar.png");
 	Ast.loadImage("adamantbar","AdamantBar.png");
-	Ast.loadImage("runitebar","RuniteBar.png");
+	Ast.loadImage("runebar","RuniteBar.png");
 	Ast.loadImage("eterniumbar","EterniumBar.png");
 	//}
 	//{armor

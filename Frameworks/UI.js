@@ -40,7 +40,6 @@ function UIFramework(){
 			this.y = y || 0;
 			this.w = w || 0;
 			this.h = h || 0;
-			this.isdown = this.isover = false;
 		}
 		function dx(x){	return this.container.boxx(x)-this.x;	}
 		function dy(y){	return this.container.boxy(y)-this.y;	}
@@ -158,92 +157,6 @@ function UIFramework(){
 		}
 	}
 	this.Clickable.call(this.Button.prototype);
-	/*this.Button = function(x,y,w,h){
-		this.x = x || 0;
-		this.y = y || 0;
-		this.w = w || 0;
-		this.h = h || 0;
-		this.cropped = this.w>0&&this.h>0;
-		this.ccolor = "grey";
-		this.bcolor = "darkgrey";
-		this.color = "clear";
-		this.alphamod = 1;
-		this.key = "";
-		this.pcolor = "black";
-		this.text = "";
-		this.mousedown = function(e,m){
-			if (e.button != 0)	return;
-			if (this.isOver(m))	{	this.down = true; return true;	}
-		}
-		this.mouseup = function(e,m){
-			if (e.button != 0)	return;
-			if (this.isOver(m) && this.down)	this.onclick.call(this);
-			this.down = false;
-		}
-		this.isOver = function(m){
-			if (!exists(this.container) || this.container == -1)
-				return false;
-			return 	m.relx(this)>0 && m.relx(this)<this.w*this.container.cumZoom() &&
-					m.rely(this)>0 && m.rely(this)<this.h*this.container.cumZoom();
-		}
-		this.mousemove = function(e,m){
-			this.over = this.isOver(m);
-		}
-		this.keydown = function(k){
-			if (k.key == this.key)
-				this.onclick.call(this);
-		}
-		this.onclick = function(){}
-		this.inrender = function(g){}
-		this.rbefore = function(g){
-			g.save()
-			g.translate(this.x,this.y);
-			if (this.alphamod > 0 && this.alphamod != 1)
-				g.globalAlpha*=this.alphamod;
-			if (!this.transparent&&this.ccolor!=="clear"){
-				g.fillStyle = this.ccolor;
-				g.fillRect(0,0,this.w,this.h);}
-			if (!this.cropped) return;
-			g.beginPath();
-			g.rect(0,0,this.w,this.h);
-			g.clip();
-			g.closePath();
-		}
-		this.rafter = function(g){
-			g.restore();
-			g.strokeStyle = this.bcolor == "clear" ? "rgba(0,0,0,0)" : this.bcolor;
-			g.lineWidth = 4;
-			g.strokeRect(this.x,this.y,this.w,this.h);
-			if (this.color!=="clear"){
-				g.globalAlpha = .5;
-				g.strokeStyle = g.fillStyle = this.color;
-				g.fillRect(this.x,this.y,this.w,this.h);
-				g.strokeRect(this.x,this.y,this.w,this.h);
-			}
-			if (!(this.down && this.over))
-				return;
-			g.globalAlpha = .5;
-			g.fillStyle = this.pcolor;
-			g.fillRect(this.x+2,this.y+2,this.w-4,this.h-4);
-		}
-		var adjusted = false;
-		this.adjust = function(g){
-			g.font = ""+(this.h*.5)+"px Arial";
-			//if (!adjusted)	
-			//	adjusted = 
-			this.w = g.measureText(this.text).width+this.h*2;
-		}
-		this.render = function(g){
-			this.rbefore(g);
-			this.inrender.call(this,g);
-			if (this.text !== ""){
-				g.fillStyle = "black";
-				g.font = ""+(this.h*.5)+"px Arial";
-				Drw.drawCText(g,this.text,this.w/2,this.h/2);
-			}
-			this.rafter(g);
-		}
-	}*/
 	this.DBox = function(x,y,w,h){
 		this.x = x || 0;
 		this.y = y || 0;
@@ -353,6 +266,55 @@ function UIFramework(){
 		this.filterq = function(func){
 			q.filter(func);
 		}
+		this.makescrollable = function(scroll,onscroll,dy){
+			this.scroll = scroll || function(amt,to){
+				//this.camera.zoom(amt+1);
+				this.camera.y = amt+to?0:this.camera.y;
+				onscroll && onscroll();
+			}//.bind(this);
+			that.Clickable.call(clicker.prototype);
+			function clicker(dy){
+				this.ddy = dy;
+				this.rl = 3;
+				this.init = function(){
+					var b = this.container.getbounds();
+					var s = (b.d-b.u)*.1;
+					this.Clickable.superinit.call(this,b.r-s,dy>0?b.u:b.d-s,s,s);
+				}
+				this.update = function(d){
+					if (this.isover && this.isdown)
+						this.container.scroll(d*this.ddy);
+					var b = this.container.getbounds();
+					var s = (b.d-b.u)*.1;
+					this.Clickable.superinit.call(this,b.r-s,dy>0?b.u:b.d-s,s,s);
+				}
+				this.leftdown = function(){
+					return true;
+				}
+				this.render = function(g){
+					g.translate(this.x,this.y);
+					g.fillStyle = "grey";
+					g.fillRect(0,0,this.w,this.h);
+					g.fillStyle = "black";
+					var dy = -Math.sign(this.ddy);
+					var m = this.h/2+dy*this.h/10;
+					g.beginPath();
+					g.moveTo(this.w/2,m+dy*this.h/5);
+					g.lineTo(this.w/5,m-dy*this.h/3);
+					g.lineTo(this.w/5*4,m-dy*this.h/3);
+					g.fill();
+					g.strokeStyle = "darkgrey";
+					g.lineWidth = 5;
+					g.strokeRect(2,2,this.w-4,this.h-4);
+					if (!(this.isdown && this.isover))
+						return;
+					g.globalAlpha = .5;
+					g.fillRect(2,2,this.w-4,this.h-4);
+				}
+			}
+			this.add(new clicker(-10));
+			this.add(new clicker(10));
+		}
 		this.tabq = [];
 		this.tabl = [];
 		this.newtab = function(name, box){
@@ -395,7 +357,8 @@ function UIFramework(){
 							if (typeof q[i]["mouse"+type] !== "undefined"  && !q[i].invisible)
 								if (q[i]["mouse"+type](e,m))
 									return true;
-			return this.mouseonbox(m)&&!this.transparent;}
+			return false;//this.mouseonbox(m)&&!this.transparent;
+		}
 		this.keyevent = function(type, c){
 			if (this.hidden || this.frozen)	return;
 			for (var j = rrng.max; j >= rrng.min; j--)
@@ -452,7 +415,7 @@ function UIFramework(){
 					//console.log(sorn.systemname);
 					//console.log("index"+q.indexOf(sorn)+" sname"+sorn.systemname);
 					if (typeof sorn.ondelete == "function")		sorn.ondelete();
-					q.splice(q.indexOf(sorn),1);	delete systems[sorn.systemname];	return;}}
+					q.splice(q.indexOf(sorn),1);	return;}}//delete systems[sorn.systemname];	return;}}
 		this.get = function(name){
 			if (typeof name !== "string"){	console.log("Not a valid name: "+name);	return -1;}	var sub = "";
 			if (name.indexOf("^")==0)if (exists(this.container))	return this.container.get(name.substring(1));else this.get(name.substring(1));
