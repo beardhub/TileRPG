@@ -40,7 +40,7 @@ function AssetsFramework(){
 		startload.call(this);}
 	this.i = function(name){
 		if (!imgs[name]){
-			console.log("Invalid image reference: "+name);
+			//console.log("Invalid image reference: "+name);
 			return;}
 		return imgs[name];}
 	this.a = function(name){

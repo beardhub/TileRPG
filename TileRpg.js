@@ -735,6 +735,16 @@ function TileRpgFramework(){
 				return;
 			case "give":
 				var item = vals.shift();
+				var full = false;
+				if (item == "full"){
+					full = true;
+					item = vals.shift();
+				}
+				if (full){
+					for (var i = 0; i < 4; i++)
+					Trpg.Invent.additem(new Trpg.Items[item+["Helm","Body","Legs","Kite"][i]]());
+					return;
+				}
 				var j = parseInt(vals.shift(),10) || 1;
 					Trpg.Invent.additem(new Trpg.Items[item](j).sets({amt:j}));
 				return;
@@ -1451,6 +1461,11 @@ function TileRpgFramework(){
 			this.textinp.focus();
 		}
 	}
+	function xferfuncs(me, obj){
+		for (var p in obj)
+			if (obj.hasOwnProperty(p) && (typeof obj[p] == "function"))
+				me[p] = obj[p];
+	}
 	this.Actionable = new (function(){
 		function superinit(){
 			this.actionslist = ["examine"];
@@ -1942,12 +1957,8 @@ function TileRpgFramework(){
 			}
 		})();
 		function E(wl,id){
-			for (var p in this.Entity)
-				if (this.Entity.hasOwnProperty(p) && (typeof this.Entity[p] == "function"))
-					this[p] = this.Entity[p];
-			for (var p in this.Combatable)
-				if (this.Combatable.hasOwnProperty(p) && (typeof this.Combatable[p] == "function"))
-					this[p] = this.Combatable[p];
+			xferfuncs(this,this.Entity);
+			xferfuncs(this,this.Combatable);
 			delete this.superinit;
 			this.save = function(){
 				return {
@@ -2077,7 +2088,9 @@ function TileRpgFramework(){
 				}
 				for (var p in this.equipment)
 					if (p !== "sets" && this.equipment[p] !== -1)
-						g.drawImage(Ast.i(this.equipment[p]),-16,-16);
+						try {
+							g.drawImage(Ast.i(this.equipment[p].equipimg.toLowerCase()),-16,-16);
+						} catch (e){}
 			}
 			this.respawndelay = 1;
 			this.addprivs = function(privs){
@@ -2138,7 +2151,12 @@ function TileRpgFramework(){
 					loc:this.loc.tomStr(),
 					guest:this.guest,
 					invis:this.invis,
-					equipment:this.equipment,
+					equipment:{
+						helm:this.equipment.helm==-1?-1:this.equipment.helm.type,
+						body:this.equipment.body==-1?-1:this.equipment.body.type,
+						legs:this.equipment.legs==-1?-1:this.equipment.legs.type,
+						kite:this.equipment.kite==-1?-1:this.equipment.kite.type
+					},
 					//Entity:this.Entity.save.call(this),
 					//invent:Trpg.invent.getsave(),
 					//#mapmap:Trpg.Map.save(),
@@ -2151,7 +2169,13 @@ function TileRpgFramework(){
 				if (this.original && !force)// ("im me");
 					return;
 				if (exists(save.invis)) this.invis = save.invis;
-				if (save.equipment)this.equipment = save.equipment;
+				if (save.equipment){
+					for (var p in save.equipment)
+						if (p !== "sets"){
+							var e = save.equipment[p];
+							this.equipment[p] = e==-1?-1:new Trpg.Items[e]()
+						}
+				}
 				if (exists(save.guest))this.guest = save.guest;
 				if (save.img)this.img = save.img;
 				if (save.type && save.type !== this.type){
@@ -2571,13 +2595,55 @@ function TileRpgFramework(){
 				return this;
 			}
 		})();
+		var Equipable = new (function(){
+			function superinit(){
+				this.slot = ["Helm","Body","Legs","Kite"].filter((e)=>this.type.indexOf(e)!==-1)[0];
+				if (!this.slot)	return;
+				this.slot = this.slot.toLowerCase();
+				this.equipimg = this.type+"Equip";
+				this.actionslist.unshift("equip");
+				this.getinventacts = function(){
+					var acts = ["use","drop","examine"];
+					if (Trpg.player.equipment[this.slot]==this)
+						acts.unshift("unequip");
+					else acts.unshift("equip");
+					return acts;
+				}
+				this.actions.equip = function(){
+					if (Trpg.player.equipment[this.slot]!==-1)
+						Trpg.player.equipment[this.slot].doaction("unequip");
+					Trpg.player.equipment[this.slot] = this;
+					this.actionslist.shift();
+					this.actionslist.unshift("unequip");
+				}
+				this.actions.unequip = function(){
+					if (Trpg.player.equipment[this.slot]==this)
+						Trpg.player.equipment[this.slot] = -1;
+					this.actionslist.shift();
+					this.actionslist.unshift("equip");
+				}
+			}
+			function inrender(g){
+				this.Item.inrender.call(this,g);
+				g.strokeStyle = "white";
+				if (Trpg.player.equipment[this.slot] == this)
+					g.strokeRect(.5,.5,this.w-1,this.h-1);
+			}
+			return function(){
+				this.Equipable = {
+					superinit:superinit,
+					inrender:inrender
+				}
+				return this;
+			}
+		})();
 		function I(x,y){
-			for (var p in this.Item)
-				if (this.Item.hasOwnProperty(p) && (typeof this.Item[p] == "function"))
-					this[p] = this.Item[p];
+			xferfuncs(this,this.Item);
+			xferfuncs(this,this.Equipable);
 			this.Clickable.superinit.call(this,x,y,32,32);
 			this.Actionable.superinit.call(this);
 			this.Item.superinit.call(this);
+			this.Equipable.superinit.call(this);
 			this.img = this.type;
 		}
 		this.Coins = function(amt){
@@ -2585,147 +2651,69 @@ function TileRpgFramework(){
 			this.stackable = true;
 			this.amt = amt || 1;
 		}
-		this.Bones = function(){
-			I.call(this);
-		}
-		this.Log = function(){
-			I.call(this);
-		}
-		this.Hammer = function(){
-			I.call(this);
-		}
-		this.Knife = function(){
-			I.call(this);
-		}
-		this.BronzeBar = function(){
-			I.call(this);
-		}
-		this.IronBar = function(){
-			I.call(this);
-		}
-		this.SteelBar = function(){
-			I.call(this);
-		}
-		this.MithrilBar = function(){
-			I.call(this);
-		}
-		this.AdamantBar = function(){
-			I.call(this);
-		}
-		this.RuneBar = function(){
-			I.call(this);
-		}
-		this.EterniumBar = function(){
-			I.call(this);
-		}
-		this.BronzeDagger = function(){
-			I.call(this);
-		}
-		this.IronDagger = function(){
-			I.call(this);
-		}
-		this.SteelDagger = function(){
-			I.call(this);
-		}
-		this.MithrilDagger = function(){
-			I.call(this);
-		}
-		this.AdamantDagger = function(){
-			I.call(this);
-		}
-		this.RuneDagger = function(){
-			I.call(this);
-		}
-		this.EterniumDagger = function(){
-			I.call(this);
-		}
-		this.BronzeHelm = function(){
-			I.call(this);
-		}
-		this.BronzeBody = function(){
-			I.call(this);
-		}
-		this.BronzeLegs = function(){
-			I.call(this);
-		}
-		this.BronzeKite = function(){
-			I.call(this);
-		}
-		this.IronHelm = function(){
-			I.call(this);
-		}
-		this.IronBody = function(){
-			I.call(this);
-		}
-		this.IronLegs = function(){
-			I.call(this);
-		}
-		this.IronKite = function(){
-			I.call(this);
-		}
-		this.SteelHelm = function(){
-			I.call(this);
-		}
-		this.SteelBody = function(){
-			I.call(this);
-		}
-		this.SteelLegs = function(){
-			I.call(this);
-		}
-		this.SteelKite = function(){
-			I.call(this);
-		}
-		this.MithrilHelm = function(){
-			I.call(this);
-		}
-		this.MithrilBody = function(){
-			I.call(this);
-		}
-		this.MithrilLegs = function(){
-			I.call(this);
-		}
-		this.MithrilKite = function(){
-			I.call(this);
-		}
-		this.AdamantHelm = function(){
-			I.call(this);
-		}
-		this.AdamantBody = function(){
-			I.call(this);
-		}
-		this.AdamantLegs = function(){
-			I.call(this);
-		}
-		this.AdamantKite = function(){
-			I.call(this);
-		}
-		this.RuneHelm = function(){
-			I.call(this);
-		}
-		this.RuneBody = function(){
-			I.call(this);
-		}
-		this.RuneLegs = function(){
-			I.call(this);
-		}
-		this.RuneKite = function(){
-			I.call(this);
-		}
-		this.EterniumHelm = function(){
-			I.call(this);
-		}
-		this.EterniumBody = function(){
-			I.call(this);
-		}
-		this.EterniumLegs = function(){
-			I.call(this);
-		}
-		this.EterniumKite = function(){
-			I.call(this);
-		}
-		this.DragonBody = function(){
-			I.call(this);
-		}
+		
+		
+		
+		
+		
+		
+		this.Bones = function(){		I.call(this);	}
+		this.Log = function(){			I.call(this);	}
+		this.Hammer = function(){		I.call(this);	}
+		this.Knife = function(){		I.call(this);	}
+		this.BronzeBar = function(){	I.call(this);	}
+		this.IronBar = function(){		I.call(this);	}
+		this.SteelBar = function(){		I.call(this);	}
+		this.MithrilBar = function(){	I.call(this);	}
+		this.AdamantBar = function(){	I.call(this);	}
+		this.RuneBar = function(){		I.call(this);	}
+		this.EterniumBar = function(){	I.call(this);	}
+		this.BronzeDagger = function(){	I.call(this);	}
+		this.IronDagger = function(){	I.call(this);	}
+		this.SteelDagger = function(){	I.call(this);	}
+		this.MithrilDagger = function(){I.call(this);	}
+		this.AdamantDagger = function(){I.call(this);	}
+		this.RuneDagger = function(){	I.call(this);	}
+		this.EterniumDagger =function(){I.call(this);	}
+		this.BronzeHelm = function(){	I.call(this);	}
+		this.BronzeBody = function(){	I.call(this);	}
+		this.BronzeLegs = function(){	I.call(this);	}
+		this.BronzeKite = function(){	I.call(this);	}
+		this.IronHelm = function(){		I.call(this);	}
+		this.IronBody = function(){		I.call(this);	}
+		this.IronLegs = function(){		I.call(this);	}
+		this.IronKite = function(){		I.call(this);	}
+		this.SteelHelm = function(){	I.call(this);	}
+		this.SteelBody = function(){	I.call(this);	}
+		this.SteelLegs = function(){	I.call(this);	}
+		this.SteelKite = function(){	I.call(this);	}
+		this.MithrilHelm = function(){	I.call(this);	}
+		this.MithrilBody = function(){	I.call(this);	}
+		this.MithrilLegs = function(){	I.call(this);	}
+		this.MithrilKite = function(){	I.call(this);	}
+		this.AdamantHelm = function(){	I.call(this);	}
+		this.AdamantBody = function(){	I.call(this);	}
+		this.AdamantLegs = function(){	I.call(this);	}
+		this.AdamantKite = function(){	I.call(this);	}
+		this.RuneHelm = function(){		I.call(this);	}
+		this.RuneBody = function(){		I.call(this);	}
+		this.RuneLegs = function(){		I.call(this);	}
+		this.RuneKite = function(){		I.call(this);	}
+		this.EterniumHelm = function(){	I.call(this);	}
+		this.EterniumBody = function(){	I.call(this);	}
+		this.EterniumLegs = function(){	I.call(this);	}
+		this.EterniumKite = function(){	I.call(this);	}
+		this.DragonHelm = function(){	I.call(this);	}
+		this.DragonBody = function(){	I.call(this);	}
+		this.DragonLegs = function(){	I.call(this);	}
+		this.DragonKite = function(){	I.call(this);	}
+		
+		
+		
+		
+		
+		
+		
 		var types = [];
 		for (var p in this)
 			if (p !== "sets"){
@@ -2733,6 +2721,7 @@ function TileRpgFramework(){
 				UI.Clickable.call(pro);
 				act.call(pro);
 				Item.call(pro);
+				Equipable.call(pro);
 				pro.type = p;
 				types.push(p);
 			}
