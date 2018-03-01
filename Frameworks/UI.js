@@ -35,69 +35,107 @@ function UIFramework(){
 		else this.follower.y = this.scale * (ty + this.y);
 	}
 	this.Clickable = (function(){
-		function superinit(x,y,w,h){
+		function superinit(x,y,w,h,dblct){
 			this.x = x || 0;
 			this.y = y || 0;
 			this.w = w || 0;
 			this.h = h || 0;
+			this.dblcdelay = dblct || (window.mobile?1:.35);
 		}
-		function dx(x){	return this.container.boxx(x)-this.x;	}
-		function dy(y){	return this.container.boxy(y)-this.y;	}
+		function cdx(x){	return this.container.boxx(x)-this.x;	}
+		function cdy(y){	return this.container.boxy(y)-this.y;	}
+		function cd(xy){	return [this.cdx(xy.x),this.cdy(xy.y)];	}
 		function onme(dx,dy){	return dx>=0&&dy>=0&&dx<this.w&&dy<this.h	}
+		function update(d){
+			if (this.dblctime >= 0)	this.dblctime-=d;
+			if (this.firstclick && this.dblctime < 0){
+				this.firstclick = false;
+				this.leftclick();
+			}
+			if (this.container !== -1 && this.container)
+			this.isover = this.checkover(Ms.getMouse());//this.onme.apply(this,this.cd(Ms.getMouse())) && this.container.mouseonbox(Ms.getMouse());
+		}
+		function checkover(m){
+			return this.onme.apply(this,this.cd(m)) && (this.container.mouseonbox(m) || !this.container.cropped);
+		}
 		function mousedown(e,m){
-			if (this.isdown = this.isover = this.onme(this.dx(m.x),this.dy(m.y))){
-				if (e.button == 0)
-					return this.leftdown && this.leftdown(this.dx(m.x),this.dy(m.y));
+			if (this.isdown = this.isover = this.checkover(m)){
+				if (e.button == 0){
+					this.dblctime = this.dblcdelay;
+					return this.leftdown && this.leftdown.apply(this,this.cd(m));
+				}
 				if (e.button == 2)
-					return this.rightdown && this.rightdown(this.dx(m.x),this.dy(m.y));
+					return this.rightdown && this.rightdown.apply(this,this.cd(m));
 			} return false;
-			/*var dx = this.dx(m.x);
-			var dy = this.dy(m.y);
-			this.isover = this.onme(dx,dy);
-			if (this.onme(dx,dy))
-				this.isover = true;
-				if (e.button == 0)
-					return this.leftclick(dx,dy);
-				else if (e.button == 2)
-					return this.rightclick(dx,dy);*/
 		}
 		function mouseup(e,m){
-			var dx = this.dx(m.x);
-			var dy = this.dy(m.y);
+			var dx = this.cdx(m.x);
+			var dy = this.cdy(m.y);
 			this.isover = this.onme(dx,dy);
 			if (!this.isdown)	return;
-			this.isdown = false;
-			if (this.isover)// && this.isdown)
-				if (e.button == 0)
-					return this.leftclick && this.leftclick(dx,dy);
+			if (this.isover && this.isdown)
+				if (e.button == 0){
+					if (this.firstclick && this.dblclick){
+						this.dblclick();
+						this.firstclick = false;
+					} else this.firstclick = true;
+					if (this.dblctime < 0) 
+						return this.leftclick && this.leftclick(dx,dy);
+				}
 				else if (e.button == 2)
 					return this.rightclick && this.rightclick(dx,dy);
+			this.isdown = false;
 		}
 		function mousemove(e,m){
-			this.isover = this.onme(this.dx(m.x),this.dy(m.y));
+			this.isover = this.onme.apply(this,this.cd(m)) && this.container.mouseonbox(Ms.getMouse());
 		}
 		return function(options){
-			this.Clickable = {superinit:superinit};
-			this.dx = dx;
-			this.dy = dy;
+			this.Clickable = {
+				superinit:superinit,
+				cdx:cdx,
+				cdy:cdy,
+				cd:cd,
+				checkover:checkover,
+				update:update,
+				onme:onme,
+				mousedown:mousedown,
+				mouseup:mouseup,
+				mousemove:mousemove
+			};
+			/*this.cdx = cdx;
+			this.cdy = cdy;
 			this.onme = onme;
 			this.mousedown = mousedown;
 			this.mouseup = mouseup;
-			this.mousemove = mousemove;
+			this.mousemove = mousemove;*/
 			return this;
 		}
 	})();
 	this.Button = function(x,y,w,h){
-		this.Clickable.superinit.call(this,x,y,w,h);
-		this.leftdown = function(){
+		this.superinit.call(this,[{Clickable:[x,y,w,h]}]);
+			this.xfers(["Clickable"]);
+		console.log(this);
+		//this.Clickable.superinit.call(this,x,y,w,h);
+		//xferfuncs(this,this.Clickable);
+		/*this.leftdown = function(){
 			return true;
-		}
+		}*/
 		this.leftclick = function(dx,dy){
 			return this.onclick.call(this);
 		}
 		this.rightclick = function(dx,dy){
 			
 		}
+		this.dblclick = function(){
+			alert("dbl");
+		}
+		//var that = this
+		//console.log(["down","up","move"].forEach.toString());//((t)=>{console.log(this)});
+		/*["down","up","move"].forEach((t)=>{//console.log(this)});
+			this["mouse"+t] = function(e,m){
+				console.log("mouse"+t);
+			return this.Clickable["mouse"+t].call(this,e,m);
+		}.bind(this)});*/
 		this.cropped = this.w>0&&this.h>0;
 		this.ccolor = "grey";
 		this.bcolor = "darkgrey";
@@ -161,7 +199,8 @@ function UIFramework(){
 			this.rafter(g);
 		}
 	}
-	this.Clickable.call(this.Button.prototype);
+	M.Functionable.call(this.Button.prototype,this.Clickable);
+	//this.Clickable.call(this.Button.prototype);
 	this.DBox = function(x,y,w,h){
 		this.x = x || 0;
 		this.y = y || 0;

@@ -35,6 +35,70 @@ function MainFramework(){
 			requestAnimationFrame(executionLoop);
 		else console.log("haltFlag called. Stopping execution.");
 	}
+	this.Functionable = new (function(){
+		function superinit(superinitargs,ordersxfers){
+			//console.log(this.prototype.supers);
+			//console.log(this.supers);
+			/*
+			this.supers = {
+				Entity:Entitiyfuncs,
+				etc.
+			}
+			superinitargs = [
+				{Clickable:[x,y,w,h]},
+				{Entity:[id]}
+				etc.
+			]
+			orderedinits = [
+				"Clickable",
+				"Entity",
+				etc.
+			]
+			superinitargs = {
+				Clickable:[x,y,w,h],
+				etc.
+			}
+			*/
+			var orderedinits = [];
+			superinitargs.forEach((s)=>{for (var p in s) if (p !== "sets") orderedinits.push(p)});
+		//	alert(orderedinits);
+		//	alert(Object.keys(superinitargs.find((s)=>Object.keys(s)[0] == "Clickable")));
+			for (var p in this.supers)
+				if (p !== "sets" && orderedinits.indexOf(p) == -1)
+					this.supers[p].superinit.apply(this,superinitargs.find((s)=>Object.keys(s)[0] == p));
+				else if (orderedinits.indexOf(p)!==-1)
+					;//console.log(p);
+		//	console.log(orderedinits)
+			orderedinits//.map((p)=>this.supers[p])
+				.forEach((s)=>{//console.log(this.supers[s]);//superinitargs.find((q)=>Object.keys(q)[0] == s)[s]);//superinitargs.find((q)=>Object.keys(q)[0] == s));console.log(this.supers[s]);
+					this.supers[s].superinit.apply(this,superinitargs.find((q)=>Object.keys(q)[0] == s)[s])});
+			//console.log(orderedinits);
+			//console.log(orderedinits);
+			//alert ("AWFEWe");
+			//console.log(orderedinits);
+				return;
+			for (var p in this.supers)
+				if (p !== "sets" && orderedinits.indexOf(p) == -1)
+					this.supers[p].superinit.apply(this,superinitargs.find((s)=>Object.keys(s)[0] == p));
+			//console.log(this);
+		}
+		function xfers(orderedinits){
+			//console.log("xfer");
+			//console.log(this);
+			orderedinits.forEach((s)=>{xferfuncs(this,this.supers[s],["superinit"])});
+		}
+		return function(){ //Functionable.call(prototype,super1,super2,...)
+			this.supers = {}
+			arguments = Object.keys(arguments).map((k)=>arguments[k]);
+			//alert(JSON.stringify(arguments));
+			if (arguments.length > 0)
+				arguments.forEach((s)=>s.call(this.supers)); // this = obj prototype
+			this.superinit = superinit;
+			this.xfers = xfers;
+			console.log(this);
+			return this;
+		}
+	})();
 	this.fN2N = function(fN){return FindFrameworkAndDo(fN,function(n){return n;});}
 	this.n2FN = function(n){return FindFrameworkAndDo(n,function(f){return f.frameworkName;},true);}
 	this.allLoaded = function(){
@@ -126,4 +190,9 @@ Function.prototype.curry = function() {
 }
 function capitalize(str){
 	return str.charAt(0).toUpperCase()+str.substring(1);
+}
+function xferfuncs(me, obj, omits){
+	for (var p in obj)
+		if (obj.hasOwnProperty(p) && (typeof obj[p] == "function") && (!omits || omits.indexOf(p)==-1))
+			me[p] = obj[p];
 }
