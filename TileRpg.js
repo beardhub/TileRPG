@@ -4,6 +4,16 @@ function TileRpgFramework(){
 	this.pvp = false;
 	this.zoomtap = false;
 	this.rclick = false;
+	this.socketons = [];
+	this.socketon = function(on, func){
+		if (Trpg.socketons.indexOf(on)==-1)
+			Trpg.socket.on(on,func);
+		//else {
+			//console.log ("dupe socketon " + on);
+		//}
+		//console.log(on);
+		Trpg.socketons.push(on);
+	}
 	this.debugger = {
 		showmouse:false,
 		showentitypaths:false,
@@ -197,7 +207,38 @@ function TileRpgFramework(){
 	function MobileUI(){
 		var box = new UI.DBox(0,0,200,800);
 		box.bcolor = "black";
+		box.rl = 4;
 		var bw = 200, bh = 100;
+		
+		box.add(new UI.Button(0,bh*0,bw,bh).sets({
+			text:"Zoomtap",toggled:false,
+			onclick:function(){
+				Trpg.zoomtap = 1;
+			},
+			dblclick:function(){
+				Trpg.zoomtap = this.toggled = !this.toggled;
+				if (!box.get("cancelzoom").hidden)
+					box.get("cancelzoom").onclick();
+			}
+		}),"zoomtapbtn");
+		
+		
+		box.add(new UI.Button(0,bh*1,bw,bh).sets({
+			text:"RClick",toggled:false,
+			onclick:function(){
+				Trpg.rclick = 1;
+			},
+			dblclick:function(){
+				Trpg.rclick = this.toggled = !this.toggled;
+			}
+		}),"rclickbtn");
+		
+		
+		
+		
+		
+		
+		/*
 		box.add(new UI.Button(0,bh*0,bw,bh).sets({
 			text:"Zoomtap:off",
 			onclick:function(){
@@ -207,16 +248,12 @@ function TileRpgFramework(){
 				this.text = "Zoomtap:"+(Trpg.zoomtap?"on":"off");
 			}
 		}),"zoomtaptoggle");
-		
-		
 		box.add(new UI.Button(0,bh*1,bw,bh).sets({
 			text:"Zoomtap x1",
 			onclick:function(){
 				Trpg.zoomtap = 1;
 			}
 		}),"zoomtapx1");
-		
-		
 		box.add(new UI.Button(0,bh*2,bw,bh).sets({
 			text:"RClick:off",
 			onclick:function(){
@@ -224,36 +261,39 @@ function TileRpgFramework(){
 				this.text = "RClick:"+(Trpg.rclick?"on":"off");
 			}
 		}),"rclicktoggle");
-		
-		
 		box.add(new UI.Button(0,bh*3,bw,bh).sets({
 			text:"RClick x1",
 			onclick:function(){
 				Trpg.rclick = 1;
 			}
 		}),"rclickx1");
-		
+		*/
 		
 		box.add(new UI.Button(bw,bh*0,bw,bh).sets({
 			text:"Cancel",hidden:true,
 			onclick:function(){
-				var that = catcher.get("zoomtap");
+				var that = Trpg.Home.get("Catcher.zoomtap");
 				that.zoombox.get("camfollow").frozen = false;
 				that.zoombox.get("camfollow").update();
 				that.zoombox.camera.zoom(.5);
 				that.zoombox = -1;
 				that.zoomed = false;
 				this.hidden = true;
-				if (Trpg.zoomtap === 1)	Trpg.zoomtap = false;
+				if (Trpg.zoomtap === 1){
+					Trpg.zoomtap = false;
+					//Trpg.MobileUI.get("zoomtapbtn").text = "Zoomtap:off";
+				}
 			}
 		}),"cancelzoom");
-		
-		
-		box.add(new UI.Button(0,bh*4,bw,bh).sets({rl:1,text:"Enter Text",
+		box.add(new UI.Button(0,bh*2,bw,bh).sets({text:"Enter Text",
 			onclick:function(){
 				var text = prompt("Enter Text");
+				var inp = Utils.getTextinp();
 				if (text == null)
 					return true;
+				inp.text = text;
+				inp.onenter();
+				return;
 				if (text.charAt(0) == "/")
 					command(text.substring(1));
 				else if (text !== "")
@@ -356,33 +396,33 @@ function TileRpgFramework(){
 		box.add(new UI.Button(600-bw/2,700,bw,bh).sets({color:"darkgrey",text:"Back",key:"Escape",onclick:function(){
 			Trpg.socket.emit("gooffline");Trpg.Home.settab("TitleMenu");
 		}}));
-		Trpg.socket.on("failedlogin", function(){
+		Trpg.socketon("failedlogin", function(){
 			alert("Login failed: incorrect username or password");
 		});
-		Trpg.socket.on("loginsuccess", function(){
+		Trpg.socketon("loginsuccess", function(){
 			if (Trpg.acc.lobby)
 			Trpg.Home.settab("Lobby");
 		});
-		Trpg.socket.on("usertaken",function(){
+		Trpg.socketon("usertaken",function(){
 			alert("That username is taken, please chose another");
 		});
-		Trpg.socket.on("accountregistered",function(data){
+		Trpg.socketon("accountregistered",function(data){
 			!Trpg.guest && alert("Your account has been created with username '"+data.username+"' and password '"+data.password+"'");
 			//Trpg.player = new Trpg.Player(data.username,false,true,Trpg.guest);
 			Trpg.acc = {username:data.username,password:data.password,lobby:true}
 			Trpg.socket.emit("trylogin",Trpg.acc);
 		});
-		Trpg.socket.on("alreadyonline",function(){
+		Trpg.socketon("alreadyonline",function(){
 			alert("Login failed: that user is already logged in");
 		});
-		Trpg.socket.on("disconnectplox",function(){
+		Trpg.socketon("disconnectplox",function(){
 			location.reload(true);
 		});
 		return box;
 	}
 	function MultiplayerSetup(){
-		Trpg.socket.on("enterserver",function(data){
-			MultiplayerSetup();
+		Trpg.socketon("enterserver",function(data){
+			//MultiplayerSetup();
 			if (data && data.account && data.account.save && data.account.save.loc){
 				Trpg.player = new Trpg.Entities.Player(
 					new Trpg.WorldLoc().loadStr(data.account.save.loc),
@@ -399,21 +439,21 @@ function TileRpgFramework(){
 				Trpg.Entsaves.empty();
 			}));
 		});
-		Trpg.socket.on("tilechange",function(data){
+		Trpg.socketon("tilechange",function(data){
 			var t = new Trpg.Tiles[data.type](new Trpg.WorldLoc().loadStr(data.loc),true);
 			Trpg.world.tilechanges[t.loc.toStr()] = t.getState();
 		});
-		Trpg.socket.on("tilechanges",function(data){
+		Trpg.socketon("tilechanges",function(data){
 			for (var p in data)
 				if (p !== "sets"){
 					var t = new Trpg.Tiles[data[p]](new Trpg.WorldLoc().loadStr(p),true);
 					Trpg.world.tilechanges[t.loc.toStr()] = t.getState();
 				}
 		});
-		Trpg.socket.on("playerjoined",function(p){
+		Trpg.socketon("playerjoined",function(p){
 			//Trpg.Console.add(p.username+" has logged in","cyan");
 		});
-		Trpg.socket.on("getentities",function(ents){
+		Trpg.socketon("getentities",function(ents){
 			for (var p in ents){
 				if (p == "sets") continue
 				var e = Trpg.BoardC.get("Entities."+p);
@@ -429,23 +469,24 @@ function TileRpgFramework(){
 					} else e.load(ents[p]);
 				}
 				else if (ents[p]){
+					if (!ents[p].loc)continue;
 					var newe = (new Trpg.Entities[ents[p].type](new Trpg.WorldLoc().loadStr(ents[p].loc),p));
 					if (newe.type == "Player")
 						Trpg.Console.add(newe.id+" has logged in","cyan");
 				}
 			}
 		});
-		Trpg.socket.on("playertarget",function(data){
+		Trpg.socketon("playertarget",function(data){
 			var others = Trpg.Entities.getoftype("Player");
 			for (var i = 0; i < others.length; i++)
 				if (others[i].username == data.username)
 					others[i].settarget({loc:new Trpg.WorldLoc().loadStr(data.targetstr)});
 		});
-		Trpg.socket.on("newentity",function(data){
+		Trpg.socketon("newentity",function(data){
 			//server to here
 			//new Trpg.Entities[data.type](new Trpg.WorldLoc().loadStr(data.loc),data.id).load(data);
 		});
-		Trpg.socket.on("removeentity",function(id){
+		Trpg.socketon("removeentity",function(id){
 			var e = Trpg.BoardC.get("Entities."+id);
 			if (e.type == "Player")
 				Trpg.Console.add(e.id+" has logged out","cyan");
@@ -454,13 +495,13 @@ function TileRpgFramework(){
 				e.removeme();
 			}
 		});
-		Trpg.socket.on("updateentity",function(data){
+		Trpg.socketon("updateentity",function(data){
 			var e = Trpg.BoardC.get("Entities."+data.id);
 			if (e !== -1)
 				e.load(data);
 				//e.removeme();
 		});
-		Trpg.socket.on("affectentity",function(data){
+		Trpg.socketon("affectentity",function(data){
 			var e = Trpg.BoardC.get("Entities."+data.id);
 			if (e == -1)return;
 			e[data.func].apply(e,data.args);
@@ -490,7 +531,7 @@ function TileRpgFramework(){
 		//window.mobile = true;
 		var bw = 200, bh = 100;
 		//catcher.init = function(){
-		if (false && window.mobile)box.onsettab = function(){
+		/*if (false && window.mobile)box.onsettab = function(){
 		
 		
 		//Trpg.UI.Claim(catcher.add(new UI.Button(0,bh*0,bw,bh).sets({
@@ -569,9 +610,9 @@ function TileRpgFramework(){
 				Drw.drawCText(g,"Enter",this.w/2,this.h/3);
 				
 				Drw.drawCText(g,"Text",this.w/2,this.h/3*2);
-			}*/
+			}*
 		}));
-		}
+		}*/
 		
 		
 		catcher.add({boxes:[],zoomed:false,zoombox:-1,rl:-1,
@@ -600,8 +641,10 @@ function TileRpgFramework(){
 				if (((Trpg.zoomtap === false) || (this.zoomed)) && Trpg.rclick && e.button == 0 && Trpg.RC.hidden){ // } && this.zoomed){
 					var c = Trpg.RC.container;
 					Trpg.RC.open(c.boxx(m.x)-20,c.boxy(m.y)-20);
-					if (Trpg.rclick === 1)
+					if (Trpg.rclick === 1){
 						Trpg.rclick = false;
+						//Trpg.MobileUI.get("rclicktoggle").text = "RClick:off";
+					}
 					return true;
 				}
 				if (Trpg.zoomtap === false) return;
@@ -676,6 +719,7 @@ function TileRpgFramework(){
 			Trpg.RC.add([],"actionslist");
 		*/
 		Trpg.RC.rl = 2;
+		Trpg.RC.mousecatcher = true;
 		Trpg.RC.close = function(){
 			this.empty();
 			this.add(checkover);
@@ -690,8 +734,10 @@ function TileRpgFramework(){
 					this.container.w = w;
 				}
 			});
-			var canc = Trpg.UI.get("cancelzoom");
-			if (canc.hidden === false)canc.onclick();
+			if (window.mobile){
+				var canc = Trpg.MobileUI.get("cancelzoom");
+				if (canc.hidden === false)canc.onclick();
+			}
 			this.hidden = true;
 		}
 		Trpg.RC.close();
@@ -703,10 +749,15 @@ function TileRpgFramework(){
 			var alls = b.get("Entities").getq().filter((s)=>s.isover).
 				concat(b.get("Items").getq().filter((s)=>s.isover)).
 				concat(b.get("Tiles").getq().filter((s)=>s.isover)).
-				map((e)=>e.getBtns()).reduce((a,b)=>a.concat(b)).
-				forEach((b)=>this.add(b.sets({y:this.h+=50})));
+				map((e)=>e.getActs()).reduce((a,b)=>a.concat(b),[])
+				.map((a)=>{console.log(a); return new UI.Button(0,this.h+=50,this.w,50).sets({
+					text:a.text,color:a.color,onclick:function(){
+						a.func();
+						this.close();
+						return true;
+					}.bind(this)
+				})}).forEach((b)=>this.add(b));
 			this.h+=50;
-				// {b.rl = 3;b.y=this.h;this.h+=50;this.add(b)});
 			this.hidden = false;
 		}
 			
@@ -753,14 +804,17 @@ function TileRpgFramework(){
 	}
 	function Lobby(){
 		var box = new UI.DBox();
+		if (window.mobile)box.x+=200;
 		var msgentry = new Utils.TextInput("allchars");
 		msgentry.onenter = function(){
 			//Trpg.Console.add(this.text,false,Trpg.acc.username);
+			if (this.text.length <= 0) return;
 			Trpg.socket && Trpg.socket.emit("consoleadd",{m:this.text,u:Trpg.acc.username});
 			this.clear();
 		}
 		box.onsettab = function(){
-			Trpg.socket.on("consoleadd",function(data){
+			//alert("box set");
+			Trpg.socketon("consoleadd",function(data){
 				Trpg.Console.add(data.m,data.c,data.u);
 			});
 			msgentry.focus();
@@ -780,9 +834,9 @@ function TileRpgFramework(){
 				Trpg.Console.render(g);
 			}
 		})());
-		var bh = window.mobile?150:100;
+		var bh = window.mobile?130:100;
 		var bw = window.mobile?600:400;
-		box.add(new UI.Button(600-bw/2,400,bw,bh).sets({text:"Click here to play",color:"#C70000",
+		box.add(new UI.Button(600-bw/2,300,bw,bh).sets({text:"Click here to play",color:"#C70000",
 			onclick:function(){
 				MultiplayerSetup();
 				Trpg.acc.lobby = false;
@@ -793,7 +847,7 @@ function TileRpgFramework(){
 				//	document.body.requestFullscreen();
 			}
 		}));
-		if (window.mobile)
+		if (false && window.mobile)
 		box.init = function(){
 			box.add(new UI.Button(0,0,150,150).sets({
 				onclick:function(){
@@ -803,7 +857,6 @@ function TileRpgFramework(){
 					Trpg.socket && Trpg.socket.emit("consoleadd",{m:text,u:Trpg.acc.username});
 				},init:function(){
 					var c = this.container.container;
-					console.log(c);
 					this.x = this.container.boxx(c.screenx(c.w))-150;
 					this.y = this.container.boxy(c.screeny(c.h))-150;
 				},inrender:function(g){
@@ -829,6 +882,7 @@ function TileRpgFramework(){
 		//Trpg.socket && Trpg.socket.emit("playerjoined",{username:Trpg.player.username});
 	}
 	function ConnectToServer(){
+		if (Trpg.socket)return true;
 		try {
 			Trpg.socket = io({transports: ['websocket'], upgrade: false});
 			return true;
@@ -1777,6 +1831,7 @@ function TileRpgFramework(){
 			return true;
 		}
 		function rightdown(dx,dy){
+			return false;
 			var that = this;
 			var acts = this.getactions();
 			return;
@@ -1790,15 +1845,23 @@ function TileRpgFramework(){
 		function getactioncolor(a){
 			return "clear";
 		}
-		function getBtns(){
-			return this.getactions().slice().map((a)=>new UI.Button(0,0,200,50).sets({
+		function getactiontext(a){
+			return capitalize(a);
+		}
+		function getActs(){
+			return this.getactions().slice().map((a)=>{return {text:this.getactiontext(a),color:this.getactioncolor(a),func:function(){
+				this.doaction(a);
+			}.bind(this)}});
+			
+			/*
+			(a)=>new UI.Button(0,0,200,50).sets({
 				text:capitalize(a),color:this.getactioncolor(a),
 				onclick:function(){
 					this.doaction(a);
 					Trpg.RC.close();
 					return true;
 				}.bind(this)
-			}))
+			}))*/
 		}
 		function fillmenu(menu){
 			var actions = this.getactions();
@@ -1814,7 +1877,9 @@ function TileRpgFramework(){
 				superinit:superinit,
 				doaction:doaction,
 				getactioncolor:getactioncolor,
-				getBtns:getBtns,
+				getactiontext:getactiontext,
+				//getBtns:getBtns,
+				getActs:getActs,
 				getactions:getactions,
 				leftdown:leftdown,
 				rightdown:rightdown,
@@ -1830,8 +1895,11 @@ function TileRpgFramework(){
 			var checkfunc = es && es.checkfunc || function(wl){
 				return Trpg.BoardC.get("Tiles."+wl.toStr()).traits.walkable;
 			}
-			if (!Trpg.board.getTile(e).traits.walkable && targetrange == 0)
+			//if (!Trpg.board.getTile(e).traits.walkable && targetrange == 0)
+			if (!checkfunc (e) && targetrange == 0){
 				targetrange = 1;
+				//alert ("end blocked");
+			}
 			function Spot(wl,parent,gcost,hcost,dir){
 				this.wl = wl.copy();
 				this.parent = parent;
@@ -1850,9 +1918,9 @@ function TileRpgFramework(){
 				{x:0,y:1},
 				{x:-1,y:0},
 				{x:-1,y:-1},
-				{x:-1,y:1},
 				{x:1,y:-1},
 				{x:1,y:1},
+				{x:-1,y:1},
 				];
 				var adjs = [];
 				for (var i = 0; i < dirs.length; i++){
@@ -1864,7 +1932,7 @@ function TileRpgFramework(){
 							if (checkfunc(spot.wl.copy().shift(dirs[i].x,0)) ||
 								checkfunc(spot.wl.copy().shift(0,dirs[i].y)))
 								if (cstrs.indexOf(wl.toStr()) == -1)
-									adjs.push(new Spot(wl,spot,11,manH(wl,e),dirs[i]));
+									adjs.push(new Spot(wl,spot,14,manH(wl,e),dirs[i]));
 						} else if (cstrs.indexOf(wl.toStr()) == -1)
 							adjs.push(new Spot(wl,spot,10,manH(wl,e),dirs[i]));
 					}
@@ -1885,6 +1953,8 @@ function TileRpgFramework(){
 				p.push({dir:spot.dir,wlstr:spot.wl.toStr()});
 				return p;
 			}
+			//var top = new Spot(s,-1,0,manH(s,e));
+			//top.dir = {x:0,y:0}
 			var openlist = [new Spot(s,-1,0,manH(s,e))];
 			var closedlist = [];
 			var ostrs = [s.toStr()];
@@ -1920,7 +1990,19 @@ function TileRpgFramework(){
 			f = forward.step();
 			b = backward.step();
 		}
-		return f || b.reverse().forEach((p)=>p.dir = {x:p.dir.x*-1,y:p.dir.y*-1}) || [];
+		if (b && b.length > 0){
+			b.reverse();
+			b.forEach((p)=>{p.dir.x*=-1;p.dir.y*=-1});
+			var l = b[b.length-1];
+			var wls = new Trpg.WorldLoc().loadStr(l.wlstr);
+			var dir = {
+				x:wls.dx(end),
+				y:wls.dy(end)
+			}
+			b.push({dir:dir,wlstr:end.toStr()});
+		}
+		return f || b || [];
+		return f || b.forEach((p)=>p.dir = {x:p.dir.x*-1,y:p.dir.y*-1}) || [];//alert("both fail");
 	}
 	function Lineofsight(start, ang, phase){
 		this.phase = phase;
@@ -1950,8 +2032,6 @@ function TileRpgFramework(){
 		var Entity = new (function(){
 			function superinit(wl,id,orig){
 				this.original = orig;
-				console.log("QEWfqwefdwf");
-				console.log(wl);
 				this.loc = wl.copy();
 				//this.rl = 2;
 				this.loc.onmove = function(wl){
@@ -2237,7 +2317,6 @@ function TileRpgFramework(){
 				}
 			}
 			function superinit(wl){
-				console.log(this.loc);
 				this.spawn = this.loc.copy();
 				this.dead = false;
 				this.respawndelay = 5;
@@ -2592,16 +2671,8 @@ function TileRpgFramework(){
 		}
 		for (var p in this){
 			var pro = this[p].prototype;
-			
 			M.Functionable.call(pro,UI.Clickable,act,Entity,Combatable);
-			console.log(pro);
 			pro.type = p;
-			
-			/*UI.Clickable.call(pro);
-			act.call(pro);
-			Entity.call(pro);
-			Combatable.call(pro);
-			pro.type = p;*/
 		}
 		//["Man","Cow","Guard","Player"].forEach((p)=>{	});
 		this.Arrow = function(wl,id,orig,ang,targs){

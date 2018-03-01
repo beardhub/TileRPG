@@ -118,6 +118,9 @@ function UtilsFramework(){
 		}
 		inputs.push(this);
 	}
+	this.getTextinp = function(){
+		return inputs.find((i)=>i.hasfocus());
+	}
 	var that = this;
 	new that.TextInput();
 	this.TimedSequence = function(seq){

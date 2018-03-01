@@ -16,7 +16,8 @@ function AssetsFramework(){
 			return;}
 		imgs[name] = new Image();
 		imgs[name].onload = function(){iloadq.splice(iloadq.indexOf(imgs[name]),1);
-				console.log("Assets loading, "+getprogress()+"% complete.");};
+			//console.log("Assets loading, "+getprogress()+"% complete.");
+		};
 		imgs[name].onerror = function(){
 			console.log("File load failed: "+src);
 			iloadq.splice(iloadq.indexOf(imgs[name]),1);
@@ -32,8 +33,8 @@ function AssetsFramework(){
 		audio[name] = new Howl({urls: [src], buffer :true, 
 			onload: function(){
 				aloadq.splice(aloadq.indexOf(audio[name]),1);
-				console.log("Assets loading, "+getprogress()+"% complete.");
-				}});
+				//console.log("Assets loading, "+getprogress()+"% complete.");
+			}});
 		aloadq.push(audio[name]);
 		}
 	this.load = function(){

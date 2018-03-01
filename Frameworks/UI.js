@@ -40,7 +40,7 @@ function UIFramework(){
 			this.y = y || 0;
 			this.w = w || 0;
 			this.h = h || 0;
-			this.dblcdelay = dblct || (window.mobile?1:.35);
+			this.dblcdelay = dblct || (window.mobile?.7:.35);
 		}
 		function cdx(x){	return this.container.boxx(x)-this.x;	}
 		function cdy(y){	return this.container.boxy(y)-this.y;	}
@@ -48,7 +48,7 @@ function UIFramework(){
 		function onme(dx,dy){	return dx>=0&&dy>=0&&dx<this.w&&dy<this.h	}
 		function update(d){
 			if (this.dblctime >= 0)	this.dblctime-=d;
-			if (this.firstclick && this.dblctime < 0){
+			if (this.firstclick && this.dblctime < 0 && this.dblclick){
 				this.firstclick = false;
 				this.leftclick();
 			}
@@ -79,7 +79,7 @@ function UIFramework(){
 						this.dblclick();
 						this.firstclick = false;
 					} else this.firstclick = true;
-					if (this.dblctime < 0) 
+					if (this.dblctime < 0 || !this.dblclick) 
 						return this.leftclick && this.leftclick(dx,dy);
 				}
 				else if (e.button == 2)
@@ -87,7 +87,7 @@ function UIFramework(){
 			this.isdown = false;
 		}
 		function mousemove(e,m){
-			this.isover = this.onme.apply(this,this.cd(m)) && this.container.mouseonbox(Ms.getMouse());
+			this.isover = this.checkover(m);//this.onme.apply(this,this.cd(m)) && this.container.mouseonbox(m);
 		}
 		return function(options){
 			this.Clickable = {
@@ -114,7 +114,7 @@ function UIFramework(){
 	this.Button = function(x,y,w,h){
 		this.superinit.call(this,[{Clickable:[x,y,w,h]}]);
 			this.xfers(["Clickable"]);
-		console.log(this);
+		//console.log(this);
 		//this.Clickable.superinit.call(this,x,y,w,h);
 		//xferfuncs(this,this.Clickable);
 		/*this.leftdown = function(){
@@ -125,9 +125,6 @@ function UIFramework(){
 		}
 		this.rightclick = function(dx,dy){
 			
-		}
-		this.dblclick = function(){
-			alert("dbl");
 		}
 		//var that = this
 		//console.log(["down","up","move"].forEach.toString());//((t)=>{console.log(this)});
@@ -401,7 +398,7 @@ function UIFramework(){
 							if (typeof q[i]["mouse"+type] !== "undefined"  && !q[i].invisible && !q[i].hidden)
 								if (q[i]["mouse"+type](e,m))
 									return true;
-			return false;//this.mouseonbox(m)&&!this.transparent;
+			return this.mousecatcher;//this.mouseonbox(m)&&!this.transparent;
 		}
 		this.keyevent = function(type, c){
 			if (this.hidden || this.frozen)	return;

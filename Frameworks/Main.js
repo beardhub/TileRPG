@@ -95,7 +95,6 @@ function MainFramework(){
 				arguments.forEach((s)=>s.call(this.supers)); // this = obj prototype
 			this.superinit = superinit;
 			this.xfers = xfers;
-			console.log(this);
 			return this;
 		}
 	})();
@@ -196,3 +195,9 @@ function xferfuncs(me, obj, omits){
 		if (obj.hasOwnProperty(p) && (typeof obj[p] == "function") && (!omits || omits.indexOf(p)==-1))
 			me[p] = obj[p];
 }
+function flatten(arr){
+	arr = arr.concat.apply(arr,arr);
+}
+//Array.prototype.flatten = function(){
+//	return [].concat.apply([],this);
+//}
