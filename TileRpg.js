@@ -2221,6 +2221,8 @@ function TileRpgFramework(){
 			this.actions.pickpocket = function(){
 				Trpg.player.settarget(this,1,(function(){
 					Trpg.player.target = -1;
+					Trpg.Invent.additem(new Trpg.Items.Coins(randr(1,3,Math.round)));
+					return;
 					//startaction(function(){
 						Trpg.invent.additem(new Trpg.Item("Coins"),Math.round(Math.random()*2+1));
 					// },this,.7);
@@ -2271,6 +2273,8 @@ function TileRpgFramework(){
 			this.actions.pickpocket = function(){
 				Trpg.player.settarget(this,1,(function(){
 					Trpg.player.target = -1;
+					Trpg.Invent.additem(new Trpg.Items.Coins(randr(5,15)));
+					return;
 					startaction(function(){
 						Trpg.invent.additem(new Trpg.Item("Coins"),Math.round(Math.random()*5+10));
 					},this,.7);
