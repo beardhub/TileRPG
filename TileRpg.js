@@ -412,8 +412,8 @@ function TileRpgFramework(){
 			text:"Zoomtap:off",
 			onclick:function(){
 				Trpg.zoomtap = !Trpg.zoomtap;
-				if (!catcher.get("cancelzoom").hidden)
-					catcher.get("cancelzoom").onclick();
+				if (!Trpg.UI.get("cancelzoom").hidden)
+					Trpg.UI.get("cancelzoom").onclick();
 				this.text = "Zoomtap:"+(Trpg.zoomtap?"on":"off");
 			}
 		}),"zoomtaptoggle");
@@ -447,7 +447,7 @@ function TileRpgFramework(){
 		Trpg.UI.add(new UI.Button(bw,bh*0,bw,bh).sets({
 			text:"Cancel",hidden:true,
 			onclick:function(){
-				var that = catcher.get("zoomtap");
+				var that = Trpg.UI.get("zoomtap");
 				that.zoombox.get("camfollow").frozen = false;
 				that.zoombox.get("camfollow").update();
 				that.zoombox.camera.zoom(.5);
