@@ -416,7 +416,7 @@ function TileRpgFramework(){
 					catcher.get("cancelzoom").onclick();
 				this.text = "Zoomtap:"+(Trpg.zoomtap?"on":"off");
 			}
-		}),"zoomtaptoggle"));
+		}),"zoomtaptoggle");
 		//Trpg.UI.Claim(catcher.add(new UI.Button(0,bh*1,bw,bh).sets({
 		Trpg.UI.add(new UI.Button(0,bh*1,bw,bh).sets({
 			text:"Zoomtap x1",
@@ -425,7 +425,7 @@ function TileRpgFramework(){
 				//if (!catcher.get("cancelzoom").hidden)
 				//	catcher.get("cancelzoom").onclick();
 			}
-		}),"zoomtapx1"));
+		}),"zoomtapx1");
 		//Trpg.UI.Claim(catcher.add(new UI.Button(0,bh*2,bw,bh).sets({
 		Trpg.UI.add(new UI.Button(0,bh*2,bw,bh).sets({
 			text:"RClick:off",
@@ -433,7 +433,7 @@ function TileRpgFramework(){
 				Trpg.rclick = !Trpg.rclick;
 				this.text = "RClick:"+(Trpg.rclick?"on":"off");
 			}
-		}),"rclicktoggle"));
+		}),"rclicktoggle");
 		//Trpg.UI.Claim(catcher.add(new UI.Button(0,bh*3,bw,bh).sets({
 		Trpg.UI.add(new UI.Button(0,bh*3,bw,bh).sets({
 			text:"RClick x1",
@@ -442,7 +442,7 @@ function TileRpgFramework(){
 				//if (!catcher.get("cancelzoom").hidden)
 				//	catcher.get("cancelzoom").onclick();
 			}
-		}),"rclickx1"));
+		}),"rclickx1");
 		//Trpg.UI.Claim(catcher.add(new UI.Button(bw,bh*0,bw,bh).sets({
 		Trpg.UI.add(new UI.Button(bw,bh*0,bw,bh).sets({
 			text:"Cancel",hidden:true,
@@ -455,7 +455,7 @@ function TileRpgFramework(){
 				that.zoomed = false;
 				this.hidden = true;
 			}
-		}),"cancelzoom"));
+		}),"cancelzoom");
 		Trpg.UI.add(new UI.Button(0,bh*4,bw,bh).sets({rl:1,text:"Enter Text",
 			onclick:function(){
 				var text = prompt("Enter Text");
