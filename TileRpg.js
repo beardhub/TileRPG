@@ -448,6 +448,7 @@ function TileRpgFramework(){
 			text:"Cancel",hidden:true,
 			onclick:function(){
 				var that = Trpg.UI.get("zoomtap");
+				if (that.zoombox == -1 || !that.zoombox) return;
 				that.zoombox.get("camfollow").frozen = false;
 				that.zoombox.get("camfollow").update();
 				that.zoombox.camera.zoom(.5);
