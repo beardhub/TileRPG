@@ -2678,6 +2678,9 @@ function TileRpgFramework(){
 		}
 		this.Hole = function(wl,asgen){
 			T.call(this,wl,"Hole",["walk","fill"],asgen);
+			this.actions.fill = function(){
+				new Trpg.Tiles.Grass(this.loc.copy());
+			}
 		}
 		this.Tree = function(wl,asgen){
 			T.call(this,wl,"Tree",["chop","search"],asgen);
@@ -2698,6 +2701,9 @@ function TileRpgFramework(){
 		}
 		this.Stump = function(wl,asgen){
 			T.call(this,wl,"Stump",["walk","dig"],asgen);
+			this.actions.dig = function(){
+				new Trpg.Tiles.Hole(this.loc.copy());
+			}
 		}
 		this.CastleWall = function(wl, asgen){
 			T.call(this,wl,"CastleWall",[],asgen);
