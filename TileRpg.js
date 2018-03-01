@@ -482,7 +482,7 @@ function TileRpgFramework(){
 				if (this.zoomed && this.zoombox !== -1){
 					var that = this;
 					Trpg.Timers.add(new Utils.Timer(0).start().setAuto(true,function(){
-						catcher.get("cancelzoom").onclick();
+						Trpg.UI.get("cancelzoom").onclick();
 					}).setKilloncomp(true));
 					return false;
 				}
@@ -523,7 +523,7 @@ function TileRpgFramework(){
 						//Trpg.board.viewsize+=2;
 						this.zoomed = true;
 						this.zoombox = b;
-						catcher.get("cancelzoom").hidden = false;
+						Trpg.UI.get("cancelzoom").hidden = false;
 						return true;
 					}
 				}
