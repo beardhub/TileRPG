@@ -118,12 +118,11 @@ io.on('connection', function(socket){
 		if (accounts[data.username].online)
 		return socket.emit("alreadyonline");
 		socket.emit("loginsuccess");
-		if (data.lobby)	return;
+		if (data.lobby)	return socket.broadcast.emit("playerjoined",{username:data.username});
 		socket.emit("enterserver",{username:data.username,account:accounts[data.username]});//,w:worlddata});
 		//socket.emit("updateworld",worlddata);
 		socket.emit("tilechanges",tiledatas);
 		//socket.emit("getentities",entitydatas);
-		//io.emit("playerjoined",players[data.username]);
 		accounts[data.username].online = true;
 		entitydatas[data.username] = accounts[data.username].save;
 	});
@@ -134,7 +133,7 @@ io.on('connection', function(socket){
 		socket.emit("getentities",entitydatas);
 	});
 	socket.on("playerjoined",function(p){
-		socket.broadcast.emit("playerjoined",p);
+		//socket.broadcast.emit("playerjoined",p);
 	});
 	socket.on("register",function(data){
 		if (typeof accounts[data.username] !== "undefined")
@@ -165,7 +164,7 @@ io.on('connection', function(socket){
 			entitydatas[ids[i]] = false;
 		}
 		//io.emit("removeentity",id);
-		io.emit("getentities",entitydatas);
+		//io.emit("getentities",entitydatas);
 	});
 	/*socket.on("regchanges",function(data){
 		for (var i = 0; i < data.length; i++)

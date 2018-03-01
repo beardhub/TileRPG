@@ -340,18 +340,22 @@ function TileRpgFramework(){
 			for (var p in ents){
 				if (p == "sets") continue
 				var e = Trpg.BoardC.get("Entities."+p);
+				if (!e) alert(e);
 				if (e !== -1 && e){
 					if (ents[p] === false){
 					//alert(e.id);
-						Trpg.BoardC.get("Entities").remove(e.id);
 						if (e.type == "Player")
-							Trpg.Console.add(e.gettitle()+" has logged out","cyan");
+							Trpg.Console.add(e.id+" has logged out","cyan");
+						Trpg.BoardC.get("Entities").remove(e.id);
 						if (p == Trpg.player.id) location.reload(true);
 						continue;
 					} else e.load(ents[p]);
 				}
-				else if (ents[p])
+				else if (ents[p]){
 					var newe = (new Trpg.Entities[ents[p].type](new Trpg.WorldLoc().loadStr(ents[p].loc),p));
+					if (newe.type == "Player")
+						;//Trpg.Console.add(newe.id+" has logged in","cyan");
+				}
 			}
 		});
 		Trpg.socket.on("playertarget",function(data){
@@ -366,6 +370,8 @@ function TileRpgFramework(){
 		});
 		Trpg.socket.on("removeentity",function(id){
 			var e = Trpg.BoardC.get("Entities."+id);
+			if (e.type == "Player")
+				Trpg.Console.add(e.id+" has logged out","cyan");
 			if (e !== -1){
 				//alert("remove");
 				e.removeme();
@@ -729,6 +735,7 @@ function TileRpgFramework(){
 		//Trpg.Home.add(Trpg.invent,"Gameplay.InvTabs.Invent.");
 		Trpg.socket && Trpg.socket.emit("collectentities");
 		Trpg.Home.settab("Gameplay");
+		//Trpg.socket && Trpg.socket.emit("playerjoined",{username:Trpg.player.username});
 	}
 	function ConnectToServer(){
 		try {
@@ -745,7 +752,7 @@ function TileRpgFramework(){
 		Trpg.board = new Trpg.Board();
 		var wl = new Trpg.WorldLoc(-1,1,3,3);
 		var v = 7;
-		for (var i = -v; i < v; i++)
+		for (var i = -v+1; i < v; i++)
 			for (var j = -v; j < v; j++)
 				new Trpg.Tiles.Grass(wl.copy().shift(i,j));
 		for (var i = -v; i < v+1; i++){
