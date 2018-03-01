@@ -8,10 +8,6 @@ function TileRpgFramework(){
 	this.socketon = function(on, func){
 		if (Trpg.socketons.indexOf(on)==-1)
 			Trpg.socket.on(on,func);
-		//else {
-			//console.log ("dupe socketon " + on);
-		//}
-		//console.log(on);
 		Trpg.socketons.push(on);
 	}
 	this.debugger = {
