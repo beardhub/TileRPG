@@ -148,9 +148,14 @@ function UIFramework(){
 		this.render = function(g){
 			this.rbefore(g);
 			this.inrender.call(this,g);
+			var size = this.h*.5;
+					g.font = ""+size+"px Arial";
 			if (this.text !== ""){
 				g.fillStyle = "black";
-				g.font = ""+(this.h*.5)+"px Arial";
+				while (g.measureText(this.text).width > this.w*.9){
+					size--;
+					g.font = ""+size+"px Arial";
+				}
 				Drw.drawCText(g,this.text,this.w/2,this.h/2);
 			}
 			this.rafter(g);
@@ -354,7 +359,7 @@ function UIFramework(){
 				for (var i = q.length-1; i >= 0; i--)
 					if (exists(q[i]))
 						if (q[i].rl==j)
-							if (typeof q[i]["mouse"+type] !== "undefined"  && !q[i].invisible)
+							if (typeof q[i]["mouse"+type] !== "undefined"  && !q[i].invisible && !q[i].hidden)
 								if (q[i]["mouse"+type](e,m))
 									return true;
 			return false;//this.mouseonbox(m)&&!this.transparent;
@@ -372,10 +377,12 @@ function UIFramework(){
 			system.container = this;
 			system.pget = this.get;
 			system.removeme = function(){
+				//alert("wfeefd");
+				//alert(this.systemname);
 				if (this.container && this.container !== -1)
 					this.container.remove(this);
 				else console.log("no container");
-			}
+			}.bind(system);
 		}
 		this.add = function(system, name){
 			if (typeof name !== "string" || name == ""){
@@ -384,7 +391,7 @@ function UIFramework(){
 				q.push(system);
 				setupSys.call(this,system);
 				//system.systemname = name;
-				if (typeof system.init == "function")	system.init();	return;}var sub = "";
+				if (typeof system.init == "function")	system.init();	return system}var sub = "";
 			if (name.indexOf("^")==0){if (exists(this.container))this.container.add(system,name.substring(1));
 				else this.add(system,name.substring(1)); }
 			if (name.indexOf(".")!==-1){
@@ -398,28 +405,49 @@ function UIFramework(){
 				systems[name] = system;
 				setupSys.call(this,system);
 				system.systemname = name;
-				if (typeof system.init == "function")	system.init();}
-			else systems[name].add(system, sub.substring(1));}
+				if (typeof system.init == "function")	system.init(); return system}
+			else return systems[name].add(system, sub.substring(1));}
 		this.remove = function(sorn){//system or name
 			switch(typeof sorn){
 				case "undefined":	console.log("Invalid removal.");	return;
 				case "string": //name 
 					//if (this.has(sorn)){ return;}// return;}
-					
-					sorn = this.get(sorn);//systems[sorn];//this.get(sorn.systemname);//	sorn.container = -1;
+					//if (sorn.charAt(0)!=="("){
+					//alert(sorn);
+					//sorn = this.get(sorn);//systems[sorn];//this.get(sorn.systemname);//	sorn.container = -1;
+				//	alert(sorn);
+				//	}else 
+					sorn = this.get(sorn);
 					//if (typeof sorn.ondelete == "function")	//	sorn.ondelete();
 					//console.log(q.splice(q.indexOf(sorn),1));
 					//delete sorn;	
+					//alert(sorn.systemname);
 					//return;
-					default: sorn.container = -1;//system
+				default: sorn.container = -1;//system
 					//console.log(sorn.systemname);
 					//console.log("index"+q.indexOf(sorn)+" sname"+sorn.systemname);
-					if (typeof sorn.ondelete == "function")		sorn.ondelete();
-					q.splice(q.indexOf(sorn),1);	return;}}//delete systems[sorn.systemname];	return;}}
+					//if (typeof sorn.ondelete == "function")		sorn.ondelete();
+					//if (!sorn || sorn == -1)return alert("blah");
+					//if (sorn.systemname.charAt(0)!=="(")
+					//;//alert(sorn.systemname);
+					q.splice(q.indexOf(sorn),1);
+					if (!sorn.ondelete || (sorn.ondelete && sorn.ondelete()))
+						delete systems[sorn.systemname];
+					return;
+			}
+		}
 		this.get = function(name){
-			if (typeof name !== "string"){	console.log("Not a valid name: "+name);	return -1;}	var sub = "";
-			if (name.indexOf("^")==0)if (exists(this.container))	return this.container.get(name.substring(1));else this.get(name.substring(1));
-			if (name.indexOf(".")!==-1){sub = name.substring(name.indexOf(".")+1);name = name.substring(0,name.indexOf("."));}
+			if (typeof name !== "string"){	console.log("Not a valid name: "+name);	return -1;}
+			var sub = "";
+			if (name.indexOf("^")==0){
+				if (exists(this.container))	
+					return this.container.get(name.substring(1));
+				else this.get(name.substring(1));
+			}
+			if (name.indexOf(".")!==-1){
+				sub = name.substring(name.indexOf(".")+1);
+				name = name.substring(0,name.indexOf("."));
+			}
 			if (typeof systems[name] !== "object"){	//throw("System not found: "+name);
 			return -1;}
 			if (sub == "") return systems[name];
@@ -429,6 +457,7 @@ function UIFramework(){
 			return exists(systems[name]);}
 		this.update = function(delta){
 			if (this.frozen || this.hidden)	return;
+			q.filter((s)=>s.container == this);				//filter is removed
 			for (var i = 0; i < q.length; i++){
 				if (!exists(q[i])) continue;
 				q[i].ul = q[i].ul || 0;
@@ -615,6 +644,22 @@ function UIFramework(){
 	this.DBox.prototype.boxy = function(y,container){
 		y = (this.container && this.container.boxy(y)) || y;
 		return (y-this.y+this.camera.y*this.camera.getzoom()-this.camera.h/2)/this.camera.getzoom(); 
+	}
+	this.DBox.prototype.Boxx = function(x,container){ // coord in container to coord in this
+		if (!container && x.container && x.container !== -1 && x.container.screenx)	return this.boxx(x.container.screenx(x.x));
+		//console.log(container);
+		//console.log(x);
+		return this.boxx(container.screenx(x));
+	}
+	this.DBox.prototype.Boxy = function(y,container){
+		if (!container && y.container && y.container !== -1 && y.container.screeny)	return this.boxy(y.container.screeny(y.y));
+		
+		return this.boxy(container.screeny(y));
+	}
+	this.DBox.prototype.Claim = function(thing){
+		thing.x = this.Boxx(thing);
+		thing.y = this.Boxy(thing);
+		this.add(thing);
 	}
 	this.DBox.prototype.mousedown = (function(e,m){	return this.mouseevent.apply(this,["down",e,m]);});
 	this.DBox.prototype.mouseup = function(e,m){	return this.mouseevent.apply(this,["up",e,m]);}

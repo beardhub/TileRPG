@@ -151,10 +151,12 @@ io.on('connection', function(socket){
 		//players[data.username].saying = data.saying;
 	});*/
 	socket.on("removeentity",function(id){
+		//console.log(id);
+		//console.log(entitydatas[id]);
 		entitydatas[id] = false;
 		if (accounts[id])	accounts[id].online = false;
-		//io.emit("removeentity",id);
-		io.emit("getentities",entitydatas);
+		io.emit("removeentity",id);
+		//io.emit("getentities",entitydatas);
 	});
 	socket.on("removeentities",function(ids){
 		for (var i = 0; i < ids.length; i++){
