@@ -4,6 +4,7 @@ function TileRpgFramework(){
 	this.pvp = false;
 	this.zoomtap = false;
 	this.rclick = false;
+	window.mobile = true;
 	this.socketons = [];
 	this.socketon = function(on, func){
 		if (Trpg.socketons.indexOf(on)==-1)
@@ -205,20 +206,19 @@ function TileRpgFramework(){
 		box.bcolor = "black";
 		box.rl = 4;
 		var bw = 200, bh = 100;
-		
+		//box.cropped = false;
 		box.add(new UI.Button(0,bh*0,bw,bh).sets({
 			text:"Zoomtap",toggled:false,
 			onclick:function(){
 				Trpg.zoomtap = 1;
+				this.toggled = true;
 			},
 			dblclick:function(){
 				Trpg.zoomtap = this.toggled = !this.toggled;
-				if (!box.get("cancelzoom").hidden)
-					box.get("cancelzoom").onclick();
+				if (!Trpg.Home.get("Catcher.cancelzoom").hidden)
+					Trpg.Home.get("Catcher.cancelzoom").onclick();
 			}
 		}),"zoomtapbtn");
-		
-		
 		box.add(new UI.Button(0,bh*1,bw,bh).sets({
 			text:"RClick",toggled:false,
 			onclick:function(){
@@ -228,44 +228,7 @@ function TileRpgFramework(){
 				Trpg.rclick = this.toggled = !this.toggled;
 			}
 		}),"rclickbtn");
-		
-		
-		
-		
-		
-		
-		/*
-		box.add(new UI.Button(0,bh*0,bw,bh).sets({
-			text:"Zoomtap:off",
-			onclick:function(){
-				Trpg.zoomtap = !Trpg.zoomtap;
-				if (!box.get("cancelzoom").hidden)
-					box.get("cancelzoom").onclick();
-				this.text = "Zoomtap:"+(Trpg.zoomtap?"on":"off");
-			}
-		}),"zoomtaptoggle");
-		box.add(new UI.Button(0,bh*1,bw,bh).sets({
-			text:"Zoomtap x1",
-			onclick:function(){
-				Trpg.zoomtap = 1;
-			}
-		}),"zoomtapx1");
-		box.add(new UI.Button(0,bh*2,bw,bh).sets({
-			text:"RClick:off",
-			onclick:function(){
-				Trpg.rclick = !Trpg.rclick;
-				this.text = "RClick:"+(Trpg.rclick?"on":"off");
-			}
-		}),"rclicktoggle");
-		box.add(new UI.Button(0,bh*3,bw,bh).sets({
-			text:"RClick x1",
-			onclick:function(){
-				Trpg.rclick = 1;
-			}
-		}),"rclickx1");
-		*/
-		
-		box.add(new UI.Button(bw,bh*0,bw,bh).sets({
+		box.add(new UI.Button(bw,bh*0,bw,bh).sets({rl:3,
 			text:"Cancel",hidden:true,
 			onclick:function(){
 				var that = Trpg.Home.get("Catcher.zoomtap");
@@ -275,10 +238,9 @@ function TileRpgFramework(){
 				that.zoombox = -1;
 				that.zoomed = false;
 				this.hidden = true;
-				if (Trpg.zoomtap === 1){
+				if (Trpg.zoomtap === 1)
 					Trpg.zoomtap = false;
-					//Trpg.MobileUI.get("zoomtapbtn").text = "Zoomtap:off";
-				}
+				return true;
 			}
 		}),"cancelzoom");
 		box.add(new UI.Button(0,bh*2,bw,bh).sets({text:"Enter Text",
@@ -295,6 +257,11 @@ function TileRpgFramework(){
 				else if (text !== "")
 					Trpg.player.say(text);
 				return true;
+			}
+		}));
+		box.add(new UI.Button(0,bh*3,bw,bh).sets({text:"Help",
+			onclick:function(){
+				Trpg.Home.get("Catcher.mobilehelp").hidden = false;
 			}
 		}));
 		return box;
@@ -517,6 +484,7 @@ function TileRpgFramework(){
 		b.add(new UI.DBox(),"Items");
 		var catcher;
 		Trpg.Home.add(catcher = new UI.DBox(0,0,1200,800),"Catcher");
+		if (window.mobile)catcher.x+=200;
 		Trpg.BoardC = b;
 		//b.get("Tiles").rl = 1;
 		b.get("Items").rl = 1;
@@ -526,6 +494,37 @@ function TileRpgFramework(){
 		//b.hidden = true;
 		//window.mobile = true;
 		var bw = 200, bh = 100;
+		if (window.mobile){
+			catcher.add(new UI.Button(0,bh*0,bw,bh).sets({rl:3,
+				text:"Cancel",hidden:true,
+				onclick:function(){
+					var that = Trpg.Home.get("Catcher.zoomtap");
+					that.zoombox.get("camfollow").frozen = false;
+					that.zoombox.get("camfollow").update();
+					that.zoombox.camera.zoom(.5);
+					that.zoombox = -1;
+					that.zoomed = false;
+					this.hidden = true;
+					if (Trpg.zoomtap === 1)
+						Trpg.zoomtap = false;
+					return true;
+				}
+			}),"cancelzoom");
+			catcher.add({hidden:true,
+				render:function(g){
+					g.font = "25px Arial";
+					Drw.drawCText(g,"When zoomtap is on your first tap will zoom in",0,0,{alignx:"left",aligny:"top",boxcolor:"white",textcolor:"black"});
+					Drw.drawCText(g,"Tapping this button once will affect the next tap",0,25,{alignx:"left",aligny:"top",boxcolor:"white",textcolor:"black"});
+					Drw.drawCText(g,"Double tapping will toggle zoomtap on or off",0,50,{alignx:"left",aligny:"top",boxcolor:"white",textcolor:"black"});
+					//Drw.drawCText(g,"When zoomed in you cancel by pressing the Cancel button",0,75,{alignx:"left",aligny:"top",boxcolor:"white",textcolor:"black"});
+					
+					Drw.drawCText(g,"When rclick is on your first tap will open the menu",0,100,{alignx:"left",aligny:"top",boxcolor:"white",textcolor:"black"});
+					Drw.drawCText(g,"Tapping this button once will affect the next tap",0,125,{alignx:"left",aligny:"top",boxcolor:"white",textcolor:"black"});
+					Drw.drawCText(g,"Double tapping will toggle rclick on or off",0,150,{alignx:"left",aligny:"top",boxcolor:"white",textcolor:"black"});
+					//Drw.drawCText(g,"If zoomtap is on it will zoom in before opening the menu",0,175,{alignx:"left",aligny:"top",boxcolor:"white",textcolor:"black"});
+				}
+			},"mobilehelp");
+		}
 		//catcher.init = function(){
 		/*if (false && window.mobile)box.onsettab = function(){
 		
@@ -616,7 +615,7 @@ function TileRpgFramework(){
 				if (this.zoomed && this.zoombox !== -1){
 					var that = this;
 					Trpg.Timers.add(new Utils.Timer(0).start().setAuto(true,function(){
-						Trpg.MobileUI.get("cancelzoom").onclick();
+						catcher.get("cancelzoom").onclick();
 					}).setKilloncomp(true));
 					return false;
 				}
@@ -632,8 +631,8 @@ function TileRpgFramework(){
 					return false;
 				}
 			
-			
-			
+				if (!this.container.mouseonbox(m))return;
+				catcher.get("mobilehelp").hidden = true;
 				if (((Trpg.zoomtap === false) || (this.zoomed)) && Trpg.rclick && e.button == 0 && Trpg.RC.hidden){ // } && this.zoomed){
 					var c = Trpg.RC.container;
 					Trpg.RC.open(c.boxx(m.x)-20,c.boxy(m.y)-20);
@@ -646,7 +645,7 @@ function TileRpgFramework(){
 				if (Trpg.zoomtap === false) return;
 				//if (Trpg.zoomtap === 1)	Trpg.zoomtap--;
 				//else if (Trpg.zoomtap === 0)	Trpg.zoomtap = false;
-				if (!this.unzoom())return false;
+				if (this.container.mouseonbox(m) && !this.unzoom())return false;
 				var bs = this.boxes;
 				for (var i = 0; i < bs.length; i++){
 					//alert(bs[i]);
@@ -659,7 +658,7 @@ function TileRpgFramework(){
 						//Trpg.board.viewsize+=2;
 						this.zoomed = true;
 						this.zoombox = b;
-						Trpg.MobileUI.get("cancelzoom").hidden = false;
+						catcher.get("cancelzoom").hidden = false;
 						return true;
 					}
 				}
@@ -746,7 +745,7 @@ function TileRpgFramework(){
 				concat(b.get("Items").getq().filter((s)=>s.isover)).
 				concat(b.get("Tiles").getq().filter((s)=>s.isover)).
 				map((e)=>e.getActs()).reduce((a,b)=>a.concat(b),[])
-				.map((a)=>{console.log(a); return new UI.Button(0,this.h+=50,this.w,50).sets({
+				.map((a)=>{return new UI.Button(0,this.h+=50,this.w,50).sets({
 					text:a.text,color:a.color,onclick:function(){
 						a.func();
 						this.close();

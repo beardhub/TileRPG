@@ -40,7 +40,7 @@ function UIFramework(){
 			this.y = y || 0;
 			this.w = w || 0;
 			this.h = h || 0;
-			this.dblcdelay = dblct || (window.mobile?.7:.35);
+			this.dblcdelay = dblct || (window.mobile?.65:.35);
 		}
 		function cdx(x){	return this.container.boxx(x)-this.x;	}
 		function cdy(y){	return this.container.boxy(y)-this.y;	}
@@ -62,7 +62,7 @@ function UIFramework(){
 			if (this.isdown = this.isover = this.checkover(m)){
 				if (e.button == 0){
 					this.dblctime = this.dblcdelay;
-					return this.leftdown && this.leftdown.apply(this,this.cd(m));
+					return (this.leftdown && this.leftdown.apply(this,this.cd(m))) || (!this.leftdown && this.leftclick.apply(this,this.cd(m)));
 				}
 				if (e.button == 2)
 					return this.rightdown && this.rightdown.apply(this,this.cd(m));
@@ -73,7 +73,9 @@ function UIFramework(){
 			var dy = this.cdy(m.y);
 			this.isover = this.onme(dx,dy);
 			if (!this.isdown)	return;
-			if (this.isover && this.isdown)
+			var wasdown = this.isdown;
+			this.isdown = false;
+			if (this.isover && wasdown)
 				if (e.button == 0){
 					if (this.firstclick && this.dblclick){
 						this.dblclick();
@@ -84,7 +86,6 @@ function UIFramework(){
 				}
 				else if (e.button == 2)
 					return this.rightclick && this.rightclick(dx,dy);
-			this.isdown = false;
 		}
 		function mousemove(e,m){
 			this.isover = this.checkover(m);//this.onme.apply(this,this.cd(m)) && this.container.mouseonbox(m);
@@ -121,7 +122,7 @@ function UIFramework(){
 			return true;
 		}*/
 		this.leftclick = function(dx,dy){
-			return this.onclick.call(this);
+			return this.onclick();//.call(this);
 		}
 		this.rightclick = function(dx,dy){
 			
