@@ -112,10 +112,10 @@ function assetsbit(){
 		for (var j = 0; j < slots.length; j++)
 			makeasset(materials[i]+slots[j]);
 	//{armorequip
-	Ast.setPath("assets/ArmorEquip/");
+	/*Ast.setPath("assets/ArmorEquip/");
 	for (var i = 0; i < materials.length; i++)
 		for (var j = 0; j < slots.length; j++)
-			makeasset(materials[i]+slots[j]+"Equip");
+			makeasset(materials[i]+slots[j]+"Equip");*/
 	//}
 	//{entities
 	Ast.setPath("assets/Entities/");
