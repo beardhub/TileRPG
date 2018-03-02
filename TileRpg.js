@@ -738,20 +738,21 @@ function TileRpgFramework(){
 		Trpg.RC.open = function(x,y){
 			this.x = x;
 			this.y = y;
-			this.h = -50;
-			this.w = 200;
+			var h = window.mobile?:75:50;
+			this.h = -h;
+			this.w = window.mobile?:300:200;
 			var alls = b.get("Entities").getq().filter((s)=>s.isover).
 				concat(b.get("Items").getq().filter((s)=>s.isover)).
 				concat(b.get("Tiles").getq().filter((s)=>s.isover)).
 				map((e)=>e.getActs()).reduce((a,b)=>a.concat(b),[])
-				.map((a)=>{return new UI.Button(0,this.h+=50,this.w,50).sets({
+				.map((a)=>{return new UI.Button(0,this.h+=h,this.w,h).sets({
 					text:a.text,color:a.color,onclick:function(){
 						a.func();
 						this.close();
 						return true;
 					}.bind(this)
 				})}).forEach((b)=>this.add(b));
-			this.h+=50;
+			this.h+=h;
 			this.hidden = false;
 		}
 			
