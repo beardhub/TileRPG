@@ -881,7 +881,12 @@ function TileRpgFramework(){
 		command("give Shortbow");
 		//command("give BronzeArrow 50");
 		Trpg.Timers.add(new Utils.Timer(10).start(true).setLoop(true).setAuto(true,function(){
-			new Trpg.Items.BronzeArrow(10).doaction("drop",new Trpg.WorldLoc(-1,1,3,3).shift(randr(-3,3,Math.round),randr(-3,3,Math.round)));
+			var wl = new Trpg.WorldLoc(-1,1,3,3).shift(randr(-3,3,Math.round),randr(-3,3,Math.round));
+			var i = Trpg.BoardC.add(new Trpg.Items.BronzeArrow(10).sets({loc:wl,x:wl.xx()+randr(-32,0),y:wl.yy()+randr(-32,0)}),"Items.");//.doaction("drop",);
+			i.actionslist = i.getgroundacts();
+			makeTemp(i,10,function(){
+				return i.container.systemname == "Items";
+			});
 		}));
 		//Trpg.Invent.additem(new Trpg.Items.Shortbow());
 		//Trpg.Invent.additem(new Trpg.Items.BronzeArrow(50));
