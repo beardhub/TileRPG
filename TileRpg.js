@@ -738,9 +738,9 @@ function TileRpgFramework(){
 		Trpg.RC.open = function(x,y){
 			this.x = x;
 			this.y = y;
-			var h = window.mobile?:75:50;
+			var h = window.mobile?75:50;
 			this.h = -h;
-			this.w = window.mobile?:300:200;
+			this.w = window.mobile?300:200;
 			var alls = b.get("Entities").getq().filter((s)=>s.isover).
 				concat(b.get("Items").getq().filter((s)=>s.isover)).
 				concat(b.get("Tiles").getq().filter((s)=>s.isover)).
