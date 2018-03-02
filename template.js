@@ -111,6 +111,9 @@ function assetsbit(){
 	for (var i = 0; i < materials.length; i++)
 		for (var j = 0; j < slots.length; j++)
 			makeasset(materials[i]+slots[j]);
+	Ast.setPath("assets/Items/");
+	for (var i = 0; i < materials.length; i++)
+		makeasset(materials[i]+"Arrow");
 	//{armorequip
 	/*Ast.setPath("assets/ArmorEquip/");
 	for (var i = 0; i < materials.length; i++)

@@ -886,12 +886,19 @@ function TileRpgFramework(){
 		command("give EterniumDagger");
 		command("give full Dragon");
 		command("give Shortbow");
+		Math.seedrandom(Date.now());
 		Trpg.Timers.add(new Utils.Timer(5).start(true).setLoop(true).setAuto(true,function(){
-			var arrows = Trpg.Invent.countitem("BronzeArrow");
+			//var amt = 25;
+			//var arrow = Trpg.Items.metals().map((m)=>{return{t:m+"Arrow",amt:randr(1, amt, Math.round)}}).reduce((a,b)=>randr(0,4,Math.round)!==0?a:b);
+			//console.log(JSON.stringify(arrow));
+			Trpg.Invent.additem(rande(Trpg.Items.metals())+"Arrow",randr(0,20,Math.round));
+			//Trpg.Invent.additem(arrow.t,arrow.amt);
+			return;
+			var arrows = Trpg.Invent.countitem(arrow);
 			if (arrows < 50 && arrows > 45)
-				 Trpg.Invent.additem("BronzeArrow",50-arrows);
+				 Trpg.Invent.additem(arrow,50-arrows);
 			else if (arrows <= 45)
-				Trpg.Invent.additem("BronzeArrow",5);
+				Trpg.Invent.additem(arrow,5);
 		}));
 	}
 	function ConnectToServer(){
@@ -2140,7 +2147,7 @@ function TileRpgFramework(){
 							//if (this.id == Trpg.player.id){
 								Trpg.board.load(Trpg.player.loc,true);
 								Trpg.board.save();
-							//}
+							// }
 						} else {
 							this.loc.load(wl.copy());
 							this.loc.mx =
@@ -2615,18 +2622,18 @@ function TileRpgFramework(){
 					Trpg.Console.add("You don't have a bow equipped");
 					return;
 				} 
+				if (this.equipment.ammo.amt <= 1){
+					Trpg.Invent.removeitem(this.equipment.ammo);
+					this.equipment.ammo = -1;
+					//return;
+				}
 				if (this.equipment.ammo == -1){
 					Trpg.Console.add("You don't have any arrows equipped");
 					return;
 				}
 				this.equipment.ammo.amt--;
-				if (this.equipment.ammo.amt <= 0){
-					Trpg.Invent.removeitem(this.equipment.ammo);
-					this.equipment.ammo = -1;
-				}
-
 				var a = Math.atan2(target.loc.yy()-this.loc.yy(),target.loc.xx()-this.loc.xx());
-					new Trpg.Entities.Arrow(this.loc.copy(),false,true,a);
+					new Trpg.Entities[this.equipment.ammo.type](this.loc.copy(),false,true,a);
 			}
 			this.inrender = function(g){
 				for (var p in this.equipment)
@@ -2830,7 +2837,8 @@ function TileRpgFramework(){
 				return this;
 			}
 		})();
-		this.Arrow = function(wl,id,orig,ang,targs){
+		var metals = ["Bronze","Iron","Steel","Mithril","Adamant","Rune","Eternium","Dragon"];
+		metals.forEach((m)=>this[m+"Arrow"] = function(wl,id,orig,ang,targs){
 			this.x = wl.xx();
 			this.y = wl.yy();
 			this.w = this.h = 16;
@@ -2897,12 +2905,14 @@ function TileRpgFramework(){
 			this.inrender = function(g){
 				g.rotate(this.angle);
 				g.scale(.75,.75);
-				g.drawImage(Ast.i("bronzearrow"),-32,-16);//this.img.toLowerCase()),-32,-16);
+				g.drawImage(Ast.i(this.type.toLowerCase()),-32,-16);//this.img.toLowerCase()),-32,-16);
 				//g.fillRect(0,-2.5,-20,5);
 			}
-		}
-		Entity.call(this.Arrow.prototype);
-		this.Arrow.prototype.type = "Arrow";
+		});
+		metals.forEach((m)=>{
+			Entity.call(this[m+"Arrow"].prototype);
+			this[m+"Arrow"].prototype.type = m+"Arrow";
+		});
 		this.ids = [];
 		this.getents = function(wl){
 			return Trpg.BoardC.get("Entities").getq().filter((e)=>{return e!==Trpg.player && e.loc && e.loc.inmdist(wl,.5) && !e.dead && !e.hidden});
@@ -3287,9 +3297,9 @@ function TileRpgFramework(){
 			this.Equipable.superinit.call(this);
 			this.img = this.type;*/
 		}
-		var Is = new (function(){
 		var materials = ["Bronze","Iron","Steel","Mithril","Adamant","Rune","Eternium","Dragon"];
 		var armor = ["Helm","Body","Legs","Kite"];
+		var Is = new (function(){
 		var dmats = materials.slice();dmats.pop();
 		this.Coins = function(amt){
 			I.call(this);
@@ -3300,12 +3310,12 @@ function TileRpgFramework(){
 		this.Log = function(){			I.call(this);	}
 		this.Hammer = function(){		I.call(this);	}
 		this.Knife = function(){		I.call(this);	}
-		this.BronzeArrow = function(amt){
+		materials.forEach((m)=>this[m+"Arrow"] = function(amt){
 			this.slot = "ammo";
 			I.call(this);	
 			this.stackable = true;
 			this.amt = amt || 1;
-		}
+		});
 		dmats.forEach((m)=>this[m+"Bar"] = function(){	I.call(this);	});
 		dmats.forEach((m)=>this[m+"Dagger"] = function(){
 			this.slot = "weapon"; I.call(this); this.rl = -1;
@@ -3392,6 +3402,9 @@ function TileRpgFramework(){
 				pro.type = p;
 				types.push(p);
 			}
+		this.metals = function(){
+			return materials.slice();
+		}
 		this.types = types;
 		return this;
 	};//)(Actionable);
