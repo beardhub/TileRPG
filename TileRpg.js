@@ -741,7 +741,8 @@ function TileRpgFramework(){
 			var h = window.mobile?75:50;
 			this.h = -h;
 			this.w = window.mobile?300:200;
-			var alls = b.get("Entities").getq().filter((s)=>s.isover).
+			var alls = Trpg.Invent.getq().filter((s)=>s.isover).
+				concat(b.get("Entities").getq().filter((s)=>s.isover)).
 				concat(b.get("Items").getq().filter((s)=>s.isover)).
 				concat(b.get("Tiles").getq().filter((s)=>s.isover)).
 				map((e)=>e.getActs()).reduce((a,b)=>a.concat(b),[])
@@ -874,6 +875,16 @@ function TileRpgFramework(){
 		//Trpg.Home.add(Trpg.invent,"Gameplay.InvTabs.Invent.");
 		Trpg.socket && Trpg.socket.emit("collectentities");
 		Trpg.Home.settab("Gameplay");
+		command("give full Eternium");
+		command("give EterniumDagger");
+		command("give full Dragon");
+		command("give Shortbow");
+		//command("give BronzeArrow 50");
+		Trpg.Timers.add(new Utils.Timer(10).start(true).setLoop(true).setAuto(true,function(){
+			new Trpg.Items.BronzeArrow(10).doaction("drop",new Trpg.WorldLoc(-1,1,3,3).shift(randr(-3,3,Math.round),randr(-3,3,Math.round)));
+		}));
+		//Trpg.Invent.additem(new Trpg.Items.Shortbow());
+		//Trpg.Invent.additem(new Trpg.Items.BronzeArrow(50));
 		//Trpg.socket && Trpg.socket.emit("playerjoined",{username:Trpg.player.username});
 	}
 	function ConnectToServer(){
@@ -890,17 +901,7 @@ function TileRpgFramework(){
 		Trpg.world = this;
 		this.tilechanges = {};
 		Trpg.board = new Trpg.Board();
-		var wl = new Trpg.WorldLoc(-1,1,3,3);
-		var v = 7;
-		for (var i = -v+1; i < v; i++)
-			for (var j = -v; j < v; j++)
-				new Trpg.Tiles.Grass(wl.copy().shift(i,j));
-		for (var i = -v; i < v+1; i++){
-			new Trpg.Tiles.CastleWall(wl.copy().shift(i,-v));
-			new Trpg.Tiles.CastleWall(wl.copy().shift(i,v));
-			new Trpg.Tiles.CastleWall(wl.copy().shift(-v,i));
-			new Trpg.Tiles.CastleWall(wl.copy().shift(v,i));
-		}
+		command("cleararea");
 		/*var wl = new Trpg.WorldLoc(-1,1,3,3).shift(-8,-8);
 		for (var i = 0; i < 16; i++)
 			for (var j = 0; j < 16; j++)
@@ -939,6 +940,19 @@ function TileRpgFramework(){
 		var p = Trpg.player;
 		var multi = true;
 		switch (cmd){
+			case "cleararea":
+				var wl = new Trpg.WorldLoc(-1,1,3,3);
+				var v = 7;
+				for (var i = -v+1; i < v; i++)
+					for (var j = -v+1; j < v; j++)
+						new Trpg.Tiles.Grass(wl.copy().shift(i,j));
+				for (var i = -v; i < v+1; i++){
+					new Trpg.Tiles.CastleWall(wl.copy().shift(i,-v));
+					new Trpg.Tiles.CastleWall(wl.copy().shift(i,v));
+					new Trpg.Tiles.CastleWall(wl.copy().shift(-v,i));
+					new Trpg.Tiles.CastleWall(wl.copy().shift(v,i));
+				}
+				return;
 			case "switchmobile":
 				if (window.mobilecheck()) return Trpg.Console.add("Can't change mobile status if on mobile device");
 				window.mobile = !window.mobile;//eval(vals.shift()||"true");
@@ -1227,9 +1241,43 @@ function TileRpgFramework(){
 				}
 			Trpg.Console.add("Inventory full");
 		}
-		this.removeitem = function(item){
+		this.removeitem = function(item,amt){
+			amt = amt || 1;
+			if (typeof item == "string"){
+				for (var i = 0; i < this.items.length; i++)
+					if (this.items[i] && this.items[i].type == item){
+						if (this.items[i].stackable){
+							if (this.items[i].amt > amt)
+								return this.items[i].amt-=amt;
+							else {
+								this.remove(this.items[i]);
+								this.items[i] = false;
+								return;
+							}
+						} else if (--amt <= 0){
+							this.remove(this.items[i]);
+							this.items[i] = false;
+							return;
+						} else {
+							this.remove(this.items[i]);
+							this.items[i] = false;
+						}
+					}
+					return;
+			}
 			this.remove(item);
 			this.items[item.s] = false;
+		}
+		this.hasitem = function(item,amt){
+			amt = amt || 1;
+			for (var i = 0; i < this.items.length; i++)
+				if (this.items[i] && this.items[i].type == item){
+					if (this.items[i].stackable)
+						amt-=this.items[i].amt;
+					else amt--;
+				}
+			if (amt <= 0) return true;
+			return false;
 		}
 		this.camera.centerZero();
 		this.camera.x+=this.w/4;
@@ -2242,6 +2290,25 @@ function TileRpgFramework(){
 			}
 		})();
 		var Combatable = new (function(){
+			function superinit(wl){
+				this.spawn = this.loc.copy();
+				this.dead = false;
+				this.respawndelay = 5;
+				/*this.actions.arrow = function(){
+					var p = Trpg.player;
+					var a = Math.atan2(this.loc.yy()-p.loc.yy(),this.loc.xx()-p.loc.xx())
+					new Trpg.Entities.Arrow(Trpg.player.loc.copy(),false,true,a);
+				}*/
+				this.actions.attack = function(){
+					Trpg.player.attack(this);
+				}
+				this.cb = 0;
+				this.maxhp = this.hp = 0;
+				this.actionslist = ["attack","examine"];
+				this.attackedby = [];
+				this.attackdelay = new Utils.Timer(1).start(true);
+				this.attrange = 1;
+			}
 			function hitsplat(dmg,x,y){
 				return makeTemp({dmg:dmg,x:x,y:y,a:1,rl:1,
 					update:function(d){
@@ -2310,25 +2377,6 @@ function TileRpgFramework(){
 					Trpg.BoardC.add(this.hitsplat(dif,this.x+Math.random()*16+8,this.y+8));
 					this.hp = save.ahp;
 				}
-			}
-			function superinit(wl){
-				this.spawn = this.loc.copy();
-				this.dead = false;
-				this.respawndelay = 5;
-				this.actions.arrow = function(){
-					var p = Trpg.player;
-					var a = Math.atan2(this.loc.yy()-p.loc.yy(),this.loc.xx()-p.loc.xx())
-					new Trpg.Entities.Arrow(Trpg.player.loc.copy(),false,true,a);
-				}
-				this.actions.attack = function(){
-					Trpg.player.attack(this);
-				}
-				this.cb = 0;
-				this.maxhp = this.hp = 0;
-				this.actionslist = ["arrow","examine"];
-				this.attackedby = [];
-				this.attackdelay = new Utils.Timer(1).start(true);
-				this.attrange = 1;
 			}
 			function getactions(){
 				var actions = this.actionslist.slice();
@@ -2489,22 +2537,58 @@ function TileRpgFramework(){
 				Trpg.Console.add(this.gettitle());
 			}
 			this.equipment = {
-				helm:-1,
 				body:-1,
+				helm:-1,
 				legs:-1,
-				kite:-1
+				kite:-1,
+				weapon:-1,
+				ammo:-1
 			};
+			this.attack = function(target){
+				if (this.equipment.weapon == -1 || this.equipment.weapon.type !== "Shortbow"){
+					Trpg.Console.add("You don't have a bow equipped");
+					return;
+				} 
+				if (this.equipment.ammo == -1){
+					Trpg.Console.add("You don't have any arrows equipped");
+					return;
+				}
+				this.equipment.ammo.amt--;
+				if (this.equipment.ammo.amt <= 0){
+					Trpg.Invent.removeitem(this.equipment.ammo);
+					this.equipment.ammo = -1;
+				}
+
+				var a = Math.atan2(target.loc.yy()-this.loc.yy(),target.loc.xx()-this.loc.xx());
+					new Trpg.Entities.Arrow(this.loc.copy(),false,true,a);
+			}
 			this.inrender = function(g){
+				for (var p in this.equipment)
+					if (p !== "sets" && this.equipment[p] !== -1 && this.equipment[p].rl < 0)
+						try {
+							this.equipment[p].renderequipped(g);
+							//g.drawImage(Ast.i(this.equipment[p].equipimg.toLowerCase()),-16,-16);
+						} catch (e){}
 				try {
-					g.drawImage(Ast.i(this.img.toLowerCase()),-16,-16);
+					if (this.img !== "Player"){
+						g.drawImage(Ast.i(this.img.toLowerCase()),-16,-16);
+					} else {
+						if (this.equipment.helm == -1)
+							g.drawImage(Ast.i("playerhead"),-16,-16);
+						if (this.equipment.body == -1)
+							g.drawImage(Ast.i("playertorso"),-16,-16);
+						if (this.equipment.legs == -1)
+							g.drawImage(Ast.i("playerlegs"),-16,-16);
+					}
 				} catch(e) {
 					g.fillStyle = "black";
 					Drw.drawCText(g,this.img,0,0);
 				}
 				for (var p in this.equipment)
-					if (p !== "sets" && this.equipment[p] !== -1)
+					if (p !== "sets" && this.equipment[p] !== -1 && (this.equipment[p].rl >= 0 || !this.equipment[p].rl))
 						try {
-							g.drawImage(Ast.i(this.equipment[p].equipimg.toLowerCase()),-16,-16);
+							this.equipment[p].renderequipped(g);
+							//g.drawImage(Ast.i(this.equipment[p].equipimg.toLowerCase()),-16,-16);
 						} catch (e){}
 			}
 			this.respawndelay = 1;
@@ -2571,7 +2655,8 @@ function TileRpgFramework(){
 						helm:this.equipment.helm==-1?-1:this.equipment.helm.type,
 						body:this.equipment.body==-1?-1:this.equipment.body.type,
 						legs:this.equipment.legs==-1?-1:this.equipment.legs.type,
-						kite:this.equipment.kite==-1?-1:this.equipment.kite.type
+						kite:this.equipment.kite==-1?-1:this.equipment.kite.type,
+						weapon:this.equipment.weapon==-1?-1:this.equipment.weapon.type,
 					},
 					//Entity:this.Entity.save.call(this),
 					//invent:Trpg.invent.getsave(),
@@ -2670,6 +2755,13 @@ function TileRpgFramework(){
 			pro.type = p;
 		}
 		//["Man","Cow","Guard","Player"].forEach((p)=>{	});
+		var Projectile = new (function(){
+			
+			return function(){
+				
+				return this;
+			}
+		})();
 		this.Arrow = function(wl,id,orig,ang,targs){
 			this.x = wl.xx();
 			this.y = wl.yy();
@@ -2702,6 +2794,14 @@ function TileRpgFramework(){
 			if (Trpg.pvp) this.targs.push("Player");
 			this.Entity.superinit.apply(this,arguments);
 			this.los = new Lineofsight(this.loc,this.angle);
+			this.los.loc.onmove = function(wl){
+				//if (Trpg.board.getTile(wl).type == "Grass"){
+				
+				if (Trpg.board.getTile(wl).traits.walkable || Trpg.board.getTile(wl).type == "Tree")
+					return true || new Trpg.Tiles.Tree(wl) || true;
+				this.blocked = true;
+				return true;
+			}
 			this.los.onstep = (function(){
 				if (!this.original)	return false;
 				var ents = Trpg.Entities.getents(this.loc);
@@ -2728,7 +2828,9 @@ function TileRpgFramework(){
 			}
 			this.inrender = function(g){
 				g.rotate(this.angle);
-				g.fillRect(0,-2.5,-20,5);
+				g.scale(.75,.75);
+				g.drawImage(Ast.i("bronzearrow"),-32,-16);//this.img.toLowerCase()),-32,-16);
+				//g.fillRect(0,-2.5,-20,5);
 			}
 		}
 		Entity.call(this.Arrow.prototype);
@@ -2758,7 +2860,11 @@ function TileRpgFramework(){
 						id:Trpg.player.id
 					});
 				}
+				this.actions.attack = function(){
+					Trpg.player.attack(this);
+				}
 				this.actions.arrow = function(){
+					return;
 					var p = Trpg.player;
 					var a = Math.atan2(this.loc.yy()-p.loc.yy(),this.loc.xx()-p.loc.xx())
 					new Trpg.Entities.Arrow(Trpg.player.loc.copy(),false,true,a);
@@ -2869,7 +2975,7 @@ function TileRpgFramework(){
 			this.Tile.superinit.call(this,type,wl,asgen);
 		}
 		this.Grass = function(wl,asgen){
-			T.call(this,wl,"Grass",["walk","tree"],asgen);
+			T.call(this,wl,"Grass",["walk","attack","tree"],asgen);
 			this.ground = false;
 			this.actions.tree = function(){
 				new Trpg.Tiles.Tree(this.loc.copy());
@@ -2905,7 +3011,7 @@ function TileRpgFramework(){
 			}
 		}
 		this.CastleWall = function(wl, asgen){
-			T.call(this,wl,"CastleWall",[],asgen);
+			T.call(this,wl,"CastleWall",["attack"],asgen);
 			this.traits.walkable = false;
 			this.inrender = function(g){
 				var adjs = 
@@ -2968,6 +3074,9 @@ function TileRpgFramework(){
 				this.actions.drop = function(wl){
 					this.loc = wl || Trpg.player.loc;
 					this.loc = this.loc.copy();
+					for (var p in Trpg.player.equipment)
+						if (p !== "sets" && Trpg.player.equipment[p] == this)
+							this.doaction("unequip");
 					if (this.container && this.container.systemname == "Invent")
 						Trpg.Invent.removeitem(this);
 					Trpg.BoardC.add(this,"Items.");
@@ -3033,11 +3142,11 @@ function TileRpgFramework(){
 			}
 		})();
 		var Equipable = new (function(){
-			function superinit(){
-				this.slot = ["Helm","Body","Legs","Kite"].filter((e)=>this.type.indexOf(e)!==-1)[0];
+			function superinit(slot){
+				this.slot = slot || ["Helm","Body","Legs","Kite"].filter((e)=>this.type.indexOf(e)!==-1)[0];
 				if (!this.slot)	return;
 				this.slot = this.slot.toLowerCase();
-				this.equipimg = this.type+"Equip";
+				//this.equipimg = this.type+"Equip";
 				this.actionslist.unshift("equip");
 				this.getinventacts = function(){
 					var acts = ["use","drop","examine"];
@@ -3050,6 +3159,7 @@ function TileRpgFramework(){
 					if (Trpg.player.equipment[this.slot]!==-1)
 						Trpg.player.equipment[this.slot].doaction("unequip");
 					Trpg.player.equipment[this.slot] = this;
+					this.onequip && this.onequip();
 					this.actionslist.shift();
 					this.actionslist.unshift("unequip");
 				}
@@ -3060,8 +3170,11 @@ function TileRpgFramework(){
 					this.actionslist.unshift("equip");
 				}
 			}
+			function renderequipped(g){
+				g.drawImage(Ast.i(this.img.toLowerCase()+"equip"),-16,-16);
+			}
 			function inrender(g){
-				this.Item.inrender.call(this,g);
+				this.supers.Item.inrender.call(this,g);
 				g.strokeStyle = "white";
 				if (Trpg.player.equipment[this.slot] == this)
 					g.strokeRect(.5,.5,this.w-1,this.h-1);
@@ -3069,427 +3182,133 @@ function TileRpgFramework(){
 			return function(){
 				this.Equipable = {
 					superinit:superinit,
-					inrender:inrender
+					inrender:inrender,
+					renderequipped:renderequipped
 				}
 				return this;
 			}
 		})();
 		function I(x,y){
-			xferfuncs(this,this.Item);
+			this.xfers(["Clickable","Actionable"]);
+			this.superinit.call(this,[
+				{Clickable:[x,y,32,32]},
+				{Actionable:[]},
+				{Item:[]},
+				{Equipable:[this.slot]}
+			]);
+			this.xfers(["Item","Equipable"]);
+			this.img = this.type;
+			/*xferfuncs(this,this.Item);
 			xferfuncs(this,this.Equipable);
 			this.Clickable.superinit.call(this,x,y,32,32);
 			this.Actionable.superinit.call(this);
 			this.Item.superinit.call(this);
 			this.Equipable.superinit.call(this);
-			this.img = this.type;
+			this.img = this.type;*/
 		}
+		var materials = ["Bronze","Iron","Steel","Mithril","Adamant","Rune","Eternium","Dragon"];
+		var armor = ["Helm","Body","Legs","Kite"];
+		var dmats = materials.slice();dmats.pop();
 		this.Coins = function(amt){
 			I.call(this);
 			this.stackable = true;
 			this.amt = amt || 1;
 		}
-		
-		
-		
-		
-		
-		
 		this.Bones = function(){		I.call(this);	}
 		this.Log = function(){			I.call(this);	}
 		this.Hammer = function(){		I.call(this);	}
 		this.Knife = function(){		I.call(this);	}
-		this.BronzeBar = function(){	I.call(this);	}
-		this.IronBar = function(){		I.call(this);	}
-		this.SteelBar = function(){		I.call(this);	}
-		this.MithrilBar = function(){	I.call(this);	}
-		this.AdamantBar = function(){	I.call(this);	}
-		this.RuneBar = function(){		I.call(this);	}
-		this.EterniumBar = function(){	I.call(this);	}
-		this.BronzeDagger = function(){	I.call(this);	}
-		this.IronDagger = function(){	I.call(this);	}
-		this.SteelDagger = function(){	I.call(this);	}
-		this.MithrilDagger = function(){I.call(this);	}
-		this.AdamantDagger = function(){I.call(this);	}
-		this.RuneDagger = function(){	I.call(this);	}
-		this.EterniumDagger =function(){I.call(this);	}
-		this.BronzeHelm = function(){	I.call(this);	}
-		this.BronzeBody = function(){	I.call(this);	}
-		this.BronzeLegs = function(){	I.call(this);	}
-		this.BronzeKite = function(){	I.call(this);	}
-		this.IronHelm = function(){		I.call(this);	}
-		this.IronBody = function(){		I.call(this);	}
-		this.IronLegs = function(){		I.call(this);	}
-		this.IronKite = function(){		I.call(this);	}
-		this.SteelHelm = function(){	I.call(this);	}
-		this.SteelBody = function(){	I.call(this);	}
-		this.SteelLegs = function(){	I.call(this);	}
-		this.SteelKite = function(){	I.call(this);	}
-		this.MithrilHelm = function(){	I.call(this);	}
-		this.MithrilBody = function(){	I.call(this);	}
-		this.MithrilLegs = function(){	I.call(this);	}
-		this.MithrilKite = function(){	I.call(this);	}
-		this.AdamantHelm = function(){	I.call(this);	}
-		this.AdamantBody = function(){	I.call(this);	}
-		this.AdamantLegs = function(){	I.call(this);	}
-		this.AdamantKite = function(){	I.call(this);	}
-		this.RuneHelm = function(){		I.call(this);	}
-		this.RuneBody = function(){		I.call(this);	}
-		this.RuneLegs = function(){		I.call(this);	}
-		this.RuneKite = function(){		I.call(this);	}
-		this.EterniumHelm = function(){	I.call(this);	}
-		this.EterniumBody = function(){	I.call(this);	}
-		this.EterniumLegs = function(){	I.call(this);	}
-		this.EterniumKite = function(){	I.call(this);	}
-		this.DragonHelm = function(){	I.call(this);	}
-		this.DragonBody = function(){	I.call(this);	}
-		this.DragonLegs = function(){	I.call(this);	}
-		this.DragonKite = function(){	I.call(this);	}
-		
-		
-		
-		
-		
-		
-		
+		this.BronzeArrow = function(amt){
+			this.slot = "ammo";
+			I.call(this);	
+			this.stackable = true;
+			this.amt = amt || 1;
+		}
+		dmats.forEach((m)=>this[m+"Bar"] = function(){	I.call(this);	});
+		dmats.forEach((m)=>this[m+"Dagger"] = function(){
+			this.slot = "weapon"; I.call(this); this.rl = -1;
+			this.renderequipped = function(g){
+				g.save();
+				g.translate(-7,2)
+				g.rotate(-Math.PI*3/5);
+				g.scale(.35,.35);
+				g.drawImage(Ast.i(this.img.toLowerCase()),-16,-16);
+				g.restore();
+			}
+		});
+		this.Shortbow = function(){	
+			this.slot = "weapon";
+			I.call(this);
+			this.is2h = true;
+			this.onequip = function(){
+				var kite = Trpg.player.equipment.kite;
+				if (kite !== -1) kite.doaction("unequip");
+			}
+			this.rl = -1
+			this.renderequipped = function(g){
+				g.save();
+				//g.rotate(-Math.PI*1/5);
+				g.scale(.6,.6);
+				g.drawImage(Ast.i(this.img.toLowerCase()),-15,-17);
+				g.restore();
+			}
+		}
+		materials.forEach((m)=>{
+			this[m+"Helm"] = function(){
+				I.call(this);
+				this.renderequipped = function(g){
+					g.save();
+					g.translate(0,-7.3)
+					g.scale(.37,.35);
+					g.drawImage(Ast.i(this.img.toLowerCase()),-16,-16);
+					g.restore();
+				}
+			}
+			this[m+"Body"] = function(){
+				I.call(this);
+				this.renderequipped = function(g){
+					g.save();
+					g.translate(0,-1.5)
+					g.scale(.45,.35);
+					g.drawImage(Ast.i(this.img.toLowerCase()),-16,-16);
+					g.restore();
+				}
+			}
+			this[m+"Legs"] = function(){
+				I.call(this);
+				this.renderequipped = function(g){
+					g.save();
+					g.translate(0,6)
+					g.scale(.5,.45);
+					g.drawImage(Ast.i(this.img.toLowerCase()),-16,-16);
+					g.restore();
+				}
+			}
+			this[m+"Kite"] = function(){
+				I.call(this);
+				this.onequip = function(){
+					var wep = Trpg.player.equipment.weapon;
+					if (wep !== -1 && wep.is2h)
+						Trpg.player.equipment.weapon.doaction("unequip");
+				}
+				this.renderequipped = function(g){
+					g.save();
+					g.translate(4.5,2)
+					g.scale(.3,.4);
+					g.drawImage(Ast.i(this.img.toLowerCase()),-16,-16);
+					g.restore();
+				}
+			}
+		});
 		var types = [];
 		for (var p in this)
 			if (p !== "sets"){
 				var pro = this[p].prototype;
-				UI.Clickable.call(pro);
-				act.call(pro);
-				Item.call(pro);
-				Equipable.call(pro);
+				M.Functionable.call(pro,UI.Clickable,act,Item,Equipable);
 				pro.type = p;
 				types.push(p);
 			}
 		this.types = types;
-		return;
-		function Default(){
-			this.type = "default";
-			this.alchable = true;
-			this.alchvalue = 0;
-			this.board = false;
-			this.stackable = false;
-			this.infinite = false;
-			this.setinfinite = function(inf){
-				this.infinite = inf;
-				return this;
-			}
-			this.copy = function(){
-				return new Trpg.Item(this.type).sets(this);
-			}
-			this.getstate = function(){	return this.type}
-			this.actions = ["use","drop"];
-			this.amt = 1;
-			this.setamt = function(amt){
-				this.amt = amt;
-				return this;
-			}
-			this.useon = function(on){
-				if (on.type == "Chest" || on.type == "BankChest"){
-					on.additem(Trpg.invent.using);
-					Trpg.invent.removeitem(Trpg.invent.using,Trpg.invent.using.amt);
-				}
-				Trpg.invent.using = -1;
-			}
-			this.doaction = function(action){
-				if (!exists(action))	action = this.getActions()[0];
-				switch (action){
-					case "use":
-						Trpg.invent.using = this;
-						break;
-					case "drop":
-						Trpg.invent.dropitem(this);
-						break;
-				}
-			}
-			this.fillmenu = function(menu){
-				var that = this;
-				if (Trpg.invent.using !== -1){
-					menu.additem(function(){
-						Trpg.invent.using.useon(that);
-						return "close,empty";
-					},Trpg.invent.using.type+" -> "+that.type);
-					return;
-				}
-				var actions = [];
-				for (var i = 0; i < this.actions.length; i++)
-					actions.push(this.actions[i]);
-				if (K.Keys.shift.down && actions.indexOf("drop")!==-1)
-					actions.unshift(actions.splice(actions.indexOf("drop"),1)[0]);
-				for (var i = 0; i < actions.length; i++)
-					menu.additem((function(a){return function(){
-						that.doaction(actions[a]);
-						return "close";
-						};})(i),actions[i].charAt(0).toUpperCase()+actions[i].substring(1));
-			}
-			this.getActions = function(){	return this.actions;	}
-			this.hasAction = function(action){	return this.getActions().indexOf(action)!=-1;}
-			this.render = function(g,x,y){
-				g.drawImage(Ast.i(this.type.toLowerCase()),x,y);
-				g.font = "8px Arial";
-				g.fillStyle = "yellow";
-				var text = amt2text(this.amt);
-				if (text.indexOf("b")!==-1)	g.fillStyle = "cyan";
-				if (text.indexOf("m")!==-1)	g.fillStyle = "#41DB00";
-				if (text.indexOf("k")!==-1)	g.fillStyle = "white";
-				if (this.stackable)
-					g.fillText(text,x+2,y+7);
-			}
-		}
-		var items = {
-			Coins:function(){
-				this.type = "Coins";
-				this.stackable = true;
-				this.alchable = false;
-				return this;
-			},
-			Bones:function(){
-				this.type = "Bones";
-				return this;
-			},
-			Log:function(){
-				this.type = "Log";
-				var that = this;
-				this.useon = function(on){
-					Trpg.invent.using = -1;
-				if (on.type == "Chest" || on.type == "BankChest"){
-					on.additem(Trpg.invent.using);
-					Trpg.invent.removeitem(Trpg.invent.using);
-				}
-					switch (on.type){
-						case "Tinderbox":
-							this.doaction("light");
-							break;
-						case "FireSmall":
-								on.doaction("fuel");
-								Trpg.invent.removeitem(that);
-							break;
-					}
-				}
-				this.doaction = function(action){
-					if (!exists(action))	action = this.getActions()[0];
-					switch (action){
-						case "light":
-							if (!Trpg.board.getTile(Trpg.player.loc).getTrait("burnable"))
-								return;
-							startaction(function(){
-								Trpg.board.setTile(new Trpg.Tiles.FireBig(),Trpg.player.loc);
-								Trpg.invent.removeitem(this);
-							},this,1.3);
-							break;
-						case "use":
-							Trpg.invent.using = this;
-							break;
-						case "drop":
-							Trpg.invent.dropitem(this);
-							break;
-					}
-				}
-				return this;
-			},
-			Seed:function(){
-				this.type = "Seed";
-				var that = this;
-				this.stackable = true;
-				this.actions = ["use","drop"];
-				this.useon = function(on){
-					Trpg.invent.using = -1;
-				if (on.type == "Chest" || on.type == "BankChest"){
-					on.additem(Trpg.invent.using);
-					Trpg.invent.removeitem(Trpg.invent.using);
-				}
-					switch (on.type){
-						case "Hole":
-							on.doaction("plant");
-							Trpg.invent.removeitem(this);
-							break;
-					}
-				}
-				return this;
-			},
-			Ore:function(type,alch){
-				this.type = type+"Ore";
-				this.alchvalue = alch;
-				return this;
-			},
-			TinOre:function(){return items.Ore.call(this,"Tin",2)},
-			CopperOre:function(){return items.Ore.call(this,"Copper",2)},
-			CoalOre:function(){return items.Ore.call(this,"Coal",20)},
-			IronOre:function(){return items.Ore.call(this,"Iron",10)},
-			MithrilOre:function(){return items.Ore.call(this,"Mithril",120)},
-			AdamantOre:function(){return items.Ore.call(this,"Adamant",250)},
-			RuneOre:function(){return items.Ore.call(this,"Rune",2000)},
-			EterniumOre:function(){return items.Ore.call(this,"Eternium",9000)},
-			Bar:function(type,alch){
-				this.type = type+"Bar";
-				this.alchvalue = alch;
-				var metals = {
-					EterniumBar:[{t:"EterniumOre",a:1},{t:"CoalOre",a:12}],
-					RuneBar:[{t:"RuneOre",a:1},{t:"CoalOre",a:8}],
-					AdamantBar:[{t:"AdamantOre",a:1},{t:"CoalOre",a:6}],
-					MithrilBar:[{t:"MithrilOre",a:1},{t:"CoalOre",a:4}],
-					SteelBar:[{t:"IronOre",a:1},{t:"CoalOre",a:2}],
-					IronBar:[{t:"IronOre",a:1}],
-					BronzeBar:[{t:"TinOre",a:1},{t:"CopperOre",a:1}],
-				}
-				this.cansmelt = function(){
-					var reqs = metals[this.type];
-					for (var i = 0; i < reqs.length; i++)
-						if (!Trpg.invent.hasitem(reqs[i].t,reqs[i].a))
-							return false;
-						return true;
-				}
-				this.smelt = function(furnace){
-					var that = this;
-					var wl = furnace.wl;
-					startaction(function(){
-						var reqs = metals[that.type];
-						for (var i = 0; i < reqs.length; i++)
-							Trpg.invent.removeitem(reqs[i].t,reqs[i].a);
-						if (that.type !== "IronBar" || Math.random()>.5)
-						Trpg.invent.additem(new Trpg.Item(that.type));
-						if (!that.cansmelt())	getaction().setKilloncomp(true);
-					},furnace,1.3,true);
-				}
-				return this;
-			},
-			BronzeBar:function(){return items.Bar.call(this,"Bronze",4)},
-			IronBar:function(){return items.Bar.call(this,"Iron",16)},
-			SteelBar:function(){return items.Bar.call(this,"Steel",60)},
-			MithrilBar:function(){return items.Bar.call(this,"Mithril",180)},
-			AdamantBar:function(){return items.Bar.call(this,"Adamant",375)},
-			RuneBar:function(){return items.Bar.call(this,"Rune",3000)},
-			EterniumBar:function(){return items.Bar.call(this,"Eternium",15000)},
-			Weapon:function(metal,type,alch){
-				this.type = metal+type;
-				this.alchvalue = alch;
-				return this;
-			},
-			BronzeDagger:function(){return items.Weapon.call(this,"Bronze","Dagger",items.BronzeBar().alchvalue*1);},
-			IronDagger:function(){return items.Weapon.call(this,"Iron","Dagger",items.IronBar().alchvalue*1);},
-			SteelDagger:function(){return items.Weapon.call(this,"Steel","Dagger",items.SteelBar().alchvalue*1);},
-			MithrilDagger:function(){return items.Weapon.call(this,"Mithril","Dagger",items.MithrilBar().alchvalue*1);},
-			AdamantDagger:function(){return items.Weapon.call(this,"Adamant","Dagger",items.AdamantBar().alchvalue*1);},
-			RuneDagger:function(){return items.Weapon.call(this,"Rune","Dagger",items.RuneBar().alchvalue*1);},
-			EterniumDagger:function(){return items.Weapon.call(this,"Eternium","Dagger",items.EterniumBar().alchvalue*1);},
-			Armor:function(metal,type,alch){
-				this.type = metal+type;
-				this.alchvalue = alch;
-				return this;
-			},
-			BronzeHelm:function(){return items.Weapon.call(this,"Bronze","Helm",items.BronzeBar().alchvalue*2);},
-			BronzeBody:function(){return items.Weapon.call(this,"Bronze","Body",items.BronzeBar().alchvalue*5);},
-			BronzeLegs:function(){return items.Weapon.call(this,"Bronze","Legs",items.BronzeBar().alchvalue*4);},
-			BronzeKite:function(){return items.Weapon.call(this,"Bronze","Kite",items.BronzeBar().alchvalue*3);},
-			IronHelm:function(){return items.Weapon.call(this,"Iron","Helm",items.IronBar().alchvalue*2);},
-			IronBody:function(){return items.Weapon.call(this,"Iron","Body",items.IronBar().alchvalue*5);},
-			IronLegs:function(){return items.Weapon.call(this,"Iron","Legs",items.IronBar().alchvalue*4);},
-			IronKite:function(){return items.Weapon.call(this,"Iron","Kite",items.IronBar().alchvalue*3);},
-			SteelHelm:function(){return items.Weapon.call(this,"Steel","Helm",items.SteelBar().alchvalue*2);},
-			SteelBody:function(){return items.Weapon.call(this,"Steel","Body",items.SteelBar().alchvalue*5);},
-			SteelLegs:function(){return items.Weapon.call(this,"Steel","Legs",items.SteelBar().alchvalue*4);},
-			SteelKite:function(){return items.Weapon.call(this,"Steel","Kite",items.SteelBar().alchvalue*3);},
-			MithrilHelm:function(){return items.Weapon.call(this,"Mithril","Helm",items.MithrilBar().alchvalue*2);},
-			MithrilBody:function(){return items.Weapon.call(this,"Mithril","Body",items.MithrilBar().alchvalue*5);},
-			MithrilLegs:function(){return items.Weapon.call(this,"Mithril","Legs",items.MithrilBar().alchvalue*4);},
-			MithrilKite:function(){return items.Weapon.call(this,"Mithril","Kite",items.MithrilBar().alchvalue*3);},
-			AdamantHelm:function(){return items.Weapon.call(this,"Adamant","Helm",items.AdamantBar().alchvalue*2);},
-			AdamantBody:function(){return items.Weapon.call(this,"Adamant","Body",items.AdamantBar().alchvalue*5);},
-			AdamantLegs:function(){return items.Weapon.call(this,"Adamant","Legs",items.AdamantBar().alchvalue*4);},
-			AdamantKite:function(){return items.Weapon.call(this,"Adamant","Kite",items.AdamantBar().alchvalue*3);},
-			RuneHelm:function(){return items.Weapon.call(this,"Rune","Helm",items.RuneBar().alchvalue*2);},
-			RuneBody:function(){return items.Weapon.call(this,"Rune","Body",items.RuneBar().alchvalue*5);},
-			RuneLegs:function(){return items.Weapon.call(this,"Rune","Legs",items.RuneBar().alchvalue*4);},
-			RuneKite:function(){return items.Weapon.call(this,"Rune","Kite",items.RuneBar().alchvalue*3);},
-			EterniumHelm:function(){return items.Weapon.call(this,"Eternium","Helm",items.EterniumBar().alchvalue*2);},
-			EterniumBody:function(){return items.Weapon.call(this,"Eternium","Body",items.EterniumBar().alchvalue*5);},
-			EterniumLegs:function(){return items.Weapon.call(this,"Eternium","Legs",items.EterniumBar().alchvalue*4);},
-			EterniumKite:function(){return items.Weapon.call(this,"Eternium","Kite",items.EterniumBar().alchvalue*3);},
-			DragonBody:function(){return items.Weapon.call(this,"Dragon","Body",75000);},
-			Ladder:function(){
-				this.type = "Ladder";
-				this.render = function(g,x,y){
-					g.drawImage(Ast.i("ladderup"),x,y);
-				}
-				return this;
-			},
-			Tinderbox:function(){
-				this.type = "Tinderbox";
-				this.useon = function(on){
-					Trpg.invent.using = -1;
-				if (on.type == "Chest" || on.type == "BankChest"){
-					on.additem(Trpg.invent.using);
-					Trpg.invent.removeitem(Trpg.invent.using);
-				}
-					switch (on.type){
-						case "Log":
-							on.doaction("light");
-							break;
-					}
-				}
-				this.render = function(g,x,y){
-					g.fillStyle = "yellow";
-					g.fillText("Tind",x+5,y+20);
-				}
-				return this;
-			},
-			Hoe:function(){
-				this.type = "Hoe";
-				this.actions = ["use"];
-				this.useon = function(on){
-					Trpg.invent.using = -1;
-					switch (on.type){
-						case "Grass":
-							on.doaction("plow");
-							break;
-					}
-				}
-				this.doaction = function(action){
-					if (!exists(action))	action = this.getActions()[0];
-					switch (action){
-						case "use":
-							Trpg.invent.using = this;
-							break;
-					}
-				}
-				this.render = function(g,x,y){
-					g.fillStyle = "yellow";
-					g.fillText("Hoe",x+5,y+20);
-					if (this.stackable)
-						g.fillText(this.amt,x+5,y+10);
-				}
-				return this;
-			},
-			Hammer:function(){
-				this.type = "Hammer";
-				return this;
-			},
-			Knife:function(){
-				this.type = "Knife";
-				this.useon = function(on){
-				if (on.type == "Chest" || on.type == "BankChest"){
-					on.additem(Trpg.invent.using);
-					Trpg.invent.removeitem(Trpg.invent.using);
-				}
-					Trpg.invent.using = -1;
-					if (on.type !== "Log")return;
-					var menu = new Trpg.Menu();
-					menu.additem(function(){
-						if (Trpg.invent.hasitem("Log",5)){
-							Trpg.invent.removeitem("Log",5);
-							Trpg.invent.additem(new Trpg.Item("Ladder"));
-						}
-						return "delete";
-					},"Ladder 5 logs","#703D00");
-					var c = Trpg.toolbox;
-					menu.open(c.boxx(Ms.x())-15,c.boxy(Ms.y())-15);
-					c.add(menu,"othermenu");
-				}
-				return this;
-			}
-		}
-		return items[type].apply(new Default());
 	})(this.Actionable);
 	this.Skills = new (function(){
 		function Default(){

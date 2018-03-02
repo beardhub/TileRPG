@@ -24,8 +24,8 @@ function init(){
 	]);
 	/*if (true || window.mobile){
 		var inp = document.createElement("input");
-		inp.setAttribute("type","text");
-		inp.setAttribute("style","z-index:101");
+		inp.setAttribute("text");
+		inp.setAttribute("z-index:101");
 		document.head.appendChild(inp);
 	}*/
 //<input type="text" style="z-index:101; position:absolute; top:10px; left:10px;"/>
@@ -111,137 +111,96 @@ function assetsbit(){
 	for (var i = 0; i < materials.length; i++)
 		for (var j = 0; j < slots.length; j++)
 			makeasset(materials[i]+slots[j]);
-	/*
-	Ast.loadImage("bronzehelm","BronzeHelm.png");
-	Ast.loadImage("bronzebody","BronzeBody.png");
-	Ast.loadImage("bronzelegs","BronzeLegs.png");
-	Ast.loadImage("bronzekite","BronzeKite.png");
-	
-	Ast.loadImage("ironhelm","IronHelm.png");
-	Ast.loadImage("ironbody","IronBody.png");
-	Ast.loadImage("ironlegs","IronLegs.png");
-	Ast.loadImage("ironkite","IronKite.png");
-	
-	Ast.loadImage("steelhelm","SteelHelm.png");
-	Ast.loadImage("steelbody","SteelBody.png");
-	Ast.loadImage("steellegs","SteelLegs.png");
-	Ast.loadImage("steelkite","SteelKite.png");
-	
-	Ast.loadImage("mithrilhelm","MithrilHelm.png");
-	Ast.loadImage("mithrilbody","MithrilBody.png");
-	Ast.loadImage("mithrillegs","MithrilLegs.png");
-	Ast.loadImage("mithrilkite","MithrilKite.png");
-	
-	Ast.loadImage("adamanthelm","AdamantHelm.png");
-	Ast.loadImage("adamantbody","AdamantBody.png");
-	Ast.loadImage("adamantlegs","AdamantLegs.png");
-	Ast.loadImage("adamantkite","AdamantKite.png");
-	
-	Ast.loadImage("runehelm","RuneHelm.png");
-	Ast.loadImage("runebody","RuneBody.png");
-	Ast.loadImage("runelegs","RuneLegs.png");
-	Ast.loadImage("runekite","RuneKite.png");
-	
-	Ast.loadImage("eterniumhelm","EterniumHelm.png");
-	Ast.loadImage("eterniumbody","EterniumBody.png");
-	Ast.loadImage("eterniumlegs","EterniumLegs.png");
-	Ast.loadImage("eterniumkite","EterniumKite.png");
-	*/
-	//Ast.loadImage("dragonhelm","DragonHelm.png");
-	//makeasset("DragonBody");
-	//Ast.loadImage("dragonlegs","DragonLegs.png");
-	//Ast.loadImage("dragonkite","DragonKite.png");
-	//}
 	//{armorequip
 	Ast.setPath("assets/ArmorEquip/");
 	for (var i = 0; i < materials.length; i++)
 		for (var j = 0; j < slots.length; j++)
 			makeasset(materials[i]+slots[j]+"Equip");
-	//makeasset("DragonBodyEquip");
-	/*Ast.loadImage("bronzehelmequip","BronzeHelmEquip.png");
-	Ast.loadImage("bronzebodyequip","BronzeBodyEquip.png");
-	Ast.loadImage("bronzelegsequip","BronzeLegsEquip.png");
-	Ast.loadImage("bronzekiteequip","BronzeKiteEquip.png");*/
 	//}
 	//{entities
 	Ast.setPath("assets/Entities/");
-	Ast.loadImage("cow","Cow.png");
-	Ast.loadImage("guard","Guard.png");
-	Ast.loadImage("man","Man.png");
-	Ast.loadImage("dummy","Dummy.png");
-	Ast.loadImage("player","PlayerS.png");
+	makeasset("Cow");
+	makeasset("Guard");
+	makeasset("Man");
+	makeasset("Dummy");
+	makeasset("PlayerHead");
+	makeasset("PlayerTorso");
+	makeasset("PlayerLegs");
+	//Ast.loadImage("player","PlayerS.png");
 	//}
 	//{items
 	Ast.setPath("assets/Items/");
-	Ast.loadImage("seed","Seed.png");
-	Ast.loadImage("bones","Bones.png");
-	Ast.loadImage("coins","Coin.png");
-	Ast.loadImage("log","Log.png");
-	Ast.loadImage("bronzebar","BronzeBar.png");
-	Ast.loadImage("ironbar","IronBar.png");
-	Ast.loadImage("steelbar","SteelBar.png");
-	Ast.loadImage("mithrilbar","MithrilBar.png");
-	Ast.loadImage("adamantbar","AdamantBar.png");
-	Ast.loadImage("runebar","RuniteBar.png");
-	Ast.loadImage("eterniumbar","EterniumBar.png");
-	Ast.loadImage("tinore","TinOre.png");
-	Ast.loadImage("copperore","CopperOre.png");
-	Ast.loadImage("coalore","CoalOre.png");
-	Ast.loadImage("ironore","IronOre.png");
-	Ast.loadImage("mithrilore","MithrilOre.png");
-	Ast.loadImage("adamantore","AdamantOre.png");
-	Ast.loadImage("runeore","RuniteOre.png");
-	Ast.loadImage("eterniumore","EterniumOre.png");
-	Ast.loadImage("hammer","Hammer.png");
-	Ast.loadImage("knife","Knife.png");
+	makeasset("Seed");
+	makeasset("Bones");
+	makeasset("Coins");
+	makeasset("Log");
+	makeasset("BronzeBar");
+	makeasset("IronBar");
+	makeasset("SteelBar");
+	makeasset("MithrilBar");
+	makeasset("AdamantBar");
+	makeasset("RuniteBar");
+	makeasset("EterniumBar");
+	makeasset("TinOre");
+	makeasset("CopperOre");
+	makeasset("CoalOre");
+	makeasset("IronOre");
+	makeasset("MithrilOre");
+	makeasset("AdamantOre");
+	makeasset("RuniteOre");
+	makeasset("EterniumOre");
+	makeasset("Hammer");
+	makeasset("Knife");
+	makeasset("BronzeArrow")
 	//}
 	//{tiles
 	Ast.setPath("assets/Tiles/");
-	Ast.loadImage("hole","Hole.png");
-	Ast.loadImage("alchingstand","AlchingStand.png");
-	Ast.loadImage("deadseedling","DeadSeedling.png");
-	Ast.loadImage("seedling","Seedling.png");
-	Ast.loadImage("sapling","Sapling.png");
-	Ast.loadImage("tree","Tree.png");
-	Ast.loadImage("stump","Stump.png");
-	Ast.loadImage("grass","Grass.png");
-	Ast.loadImage("dirt","Dirt.png");
-	Ast.loadImage("stone","Stone.png");
-	Ast.loadImage("furnace","Furnace.png");
-	Ast.loadImage("anvil","Anvil.png");
-	Ast.loadImage("bankchestC","BankChest.png");
-	Ast.loadImage("bankchestO","BankChestOpen.png");
-	Ast.loadImage("bronzechestC","BronzeChest.png");
-	Ast.loadImage("bronzechestO","BronzeChestOpen.png");
-	Ast.loadImage("ironchestC","IronChest.png");
-	Ast.loadImage("ironchestO","IronChestOpen.png");
-	Ast.loadImage("ladderdown","LadderDown.png");
-	Ast.loadImage("ladderup","LadderUp.png");
-	Ast.loadImage("portal","BluePortal.png");
+	makeasset("Hole");
+	makeasset("AlchingStand");
+	makeasset("DeadSeedling");
+	makeasset("Seedling");
+	makeasset("Sapling");
+	makeasset("Tree");
+	makeasset("Stump");
+	makeasset("Grass");
+	makeasset("Dirt");
+	makeasset("Stone");
+	makeasset("Furnace");
+	makeasset("Anvil");
+	makeasset("BankChest");
+	makeasset("BankChestOpen");
+	makeasset("BronzeChest");
+	makeasset("BronzeChestOpen");
+	makeasset("IronChest");
+	makeasset("IronChestOpen");
+	makeasset("LadderDown");
+	makeasset("LadderUp");
+	makeasset("BluePortal");
 	Ast.loadImage("cwallu","CastleWallUp.png");
 	Ast.loadImage("cwalll","CastleWallL.png");
 	Ast.loadImage("cwallt","CastleWallT.png");
 	Ast.loadImage("cwallx","CastleWallX.png");
 	Ast.loadImage("cwallv","CastleWallVert.png");
 	Ast.loadImage("cwallc","CastleWallCenter.png");
-	Ast.loadImage("firebig","FireBig.png");
-	Ast.loadImage("firesmall","FireSmall.png");
-	Ast.loadImage("ploweddirt","PlowedDirt.png");
+	makeasset("FireBig");
+	makeasset("FireSmall");
+	makeasset("PlowedDirt");
 	//}
 	//{weapons
 	Ast.setPath("assets/Weapons/");
-	Ast.loadImage("bronzedagger","BronzeDagger.png");
-	Ast.loadImage("irondagger","IronDagger.png");
-	Ast.loadImage("steeldagger","SteelDagger.png");
-	Ast.loadImage("mithrildagger","MithrilDagger.png");
-	Ast.loadImage("adamantdagger","AdamantDagger.png");
-	Ast.loadImage("runedagger","RuneDagger.png");
-	Ast.loadImage("eterniumdagger","EterniumDagger.png");
+	makeasset("BronzeDagger");
+	makeasset("IronDagger");
+	makeasset("SteelDagger");
+	makeasset("MithrilDagger");
+	makeasset("AdamantDagger");
+	makeasset("RuneDagger");
+	makeasset("EterniumDagger");
+	makeasset("Shortbow");
 	//}
 	/*unused
-	Ast.loadImage("playerN","PlayerN.png");
-	Ast.loadImage("playerE","PlayerE.png");
-	Ast.loadImage("playerW","PlayerW.png");
+	makeasset("playerN","PlayerN");
+	makeasset("playerE","PlayerE");
+	makeasset("playerW","PlayerW");
 	*/
 	Ast.load();
 }
