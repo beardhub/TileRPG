@@ -4,7 +4,6 @@ function TileRpgFramework(){
 	this.pvp = false;
 	this.zoomtap = false;
 	this.rclick = false;
-	window.mobile = true;
 	this.socketons = [];
 	this.socketon = function(on, func){
 		if (Trpg.socketons.indexOf(on)==-1)
