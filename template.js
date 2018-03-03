@@ -154,7 +154,6 @@ function assetsbit(){
 	makeasset("EterniumOre");
 	makeasset("Hammer");
 	makeasset("Knife");
-	makeasset("BronzeArrow")
 	//}
 	//{tiles
 	Ast.setPath("assets/Tiles/");

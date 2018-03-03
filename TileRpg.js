@@ -1970,7 +1970,9 @@ function TileRpgFramework(){
 			var targetrange = es && es.targetrange || 0;
 			var range = es && es.range || 15;
 			var checkfunc = es && es.checkfunc || function(wl){
-				return Trpg.BoardC.get("Tiles."+wl.toStr()).traits.walkable;
+				var t = Trpg.Tiles.get(wl.toStr());
+				if (t !== -1) return t.traits.walkable;
+				return false;
 			}
 			//if (!Trpg.board.getTile(e).traits.walkable && targetrange == 0)
 			if (!checkfunc (e) && targetrange == 0){
@@ -2126,14 +2128,6 @@ function TileRpgFramework(){
 				this.range = 5;
 				this.pathrange = 10;
 				this.img = this.type;
-				this.getactions = function(){
-					var acts = this.actionslist.slice();
-					if (Trpg.player.hasprivilege("remover") && (this.type !== "Player" || !this.hasprivilege("admin")))
-						acts.push("removeent");
-					if (Trpg.player.hasprivilege("admin"))
-						acts.push("set");
-					return acts;
-				}
 				if (this.actions){
 					this.actions.teleport = function(wl){
 						if (typeof wl == "string")
@@ -2165,6 +2159,14 @@ function TileRpgFramework(){
 				}
 				this.x = this.loc.xx()-this.w/2;
 				this.y = this.loc.yy()-this.h/2;
+			}
+			function getactions(){
+				var acts = this.actionslist.slice();
+				if (Trpg.player.hasprivilege("remover") && (this.type !== "Player" || !this.hasprivilege("admin")))
+					acts.push("removeent");
+				if (Trpg.player.hasprivilege("admin"))
+					acts.push("set");
+				return acts;
 			}
 			function checkover(m){
 				return this.onme.apply(this,this.cd(m)) && (Trpg.BoardC.mouseonbox(m));// || !this.container.cropped);
@@ -2279,19 +2281,12 @@ function TileRpgFramework(){
 					g.globalAlpha = .5;
 				this.inrender(g);
 				g.globalAlpha = 1;
-				if (this.hp < this.maxhp){
-					var m = 20*this.hp/this.maxhp;
-					g.fillStyle = "green";
-					g.fillRect(-10,-20,m,5)
-					g.fillStyle = "red";
-					g.fillRect(-10+m,-20,20-m,5)
-				}
 				if (this.isover && Trpg.showover){
 					g.strokeStyle = "yellow";
 					g.strokeRect(-this.w/2,-this.h/2,this.w,this.h);
 				}
-				if (hasaction() && getaction().owner == this)
-					getaction().renderp(g);
+				//if (hasaction() && getaction().owner == this)
+				//	getaction().renderp(g);
 				if (this.saying == ""){
 					g.restore();
 					return;
@@ -2313,7 +2308,8 @@ function TileRpgFramework(){
 				this.Entity = {
 					superinit:superinit,
 					save:save,					load:load,
-					getactiontext:getactiontext,					//ondelete:ondelete,
+					getactiontext:getactiontext,
+					getaction:getaction,					//ondelete:ondelete,
 					checkover:checkover,
 					getname:getname,
 					canceltarget:canceltarget,
@@ -2355,8 +2351,8 @@ function TileRpgFramework(){
 				this.actions.attack = function(){
 					Trpg.player.attack(this);
 				}
-				this.maxhp = this.hp = this.stats.hp;
-				this.actionslist = ["attack","examine"];
+				this.hp = this.stats.hp;
+				this.actionslist = ["examine"];
 				this.attackedby = [];
 				this.attackdelay = new Utils.Timer(1).start(true);
 				this.attrange = 1;
@@ -2377,7 +2373,7 @@ function TileRpgFramework(){
 				},1);
 			}
 			function respawn(){
-				this.hp = this.maxhp;
+				this.hp = this.stats.hp;
 				this.dead = false;
 				this.hidden = false;
 				if (!this.original)return;
@@ -2387,7 +2383,7 @@ function TileRpgFramework(){
 				if (this.type == "Player"){
 					//this.doaction("teleport",new Trpg.WorldLoc(-1,1,3,3));
 					this.loc.load(new Trpg.WorldLoc(-1,1,3,3));
-					this.hp = this.maxhp;
+					this.hp = this.stats.hp;
 					if (Trpg.socket){
 						Trpg.socket.emit("affectentity",{id:this.id,func:"load",args:[this.save(),true]});
 					}
@@ -2410,11 +2406,11 @@ function TileRpgFramework(){
 					//alert("hit");
 					Trpg.BoardC.add(this.hitsplat(dmg,this.x+Math.random()*16+8,this.y+8),"Entities.");
 					this.hp-=dmg;
-				} else //return;
+				}// else //return;
 				if (this.hp <= 0){
 					this.hp = 0;
 					this.dead = true;
-					this.original && Trpg.socket && Trpg.socket.emit("consoleadd",{m:this.id+" has been killed"});
+					this.type == "Player" && this.original && Trpg.socket && Trpg.socket.emit("consoleadd",{m:this.id+" has been killed"});
 					Trpg.socket && Trpg.socket.emit("affectentity",{func:"ondeath",args:[],id:this.id})
 				}
 			}
@@ -2429,17 +2425,20 @@ function TileRpgFramework(){
 				return {
 					hp:this.hp,
 					dmg:false,
-					maxhp:this.maxhp,
+					stats:this.stats,
 				}
 			}
 			function load(save){
-				if (save.maxhp)this.maxhp = save.maxhp;
-				return;
-				if (!(save.bhp && save.ahp))return;
-				var dif = save.bhp-save.ahp;
-				if (this.hp > save.ahp){
-					Trpg.BoardC.add(this.hitsplat(dif,this.x+Math.random()*16+8,this.y+8));
-					this.hp = save.ahp;
+				if (save.hp && !this.original)this.hp = save.hp; 
+				if (save.stats){
+					this.cb = 0;
+					for (var p in save.stats)
+						if (p !== "sets"){
+							if (!this.stats[p])
+								this.stats[p] = save.stats[p];
+							this.cb+=this.stats[p];
+						} 
+					this.cb/=5;
 				}
 			}
 			function getactions(){
@@ -2449,11 +2448,23 @@ function TileRpgFramework(){
 				else actions.unshift("attack");
 				return actions;
 			}
+			function render(g){
+				this.supers.Entity.render.call(this,g);
+				g.translate(this.loc.xx(),this.loc.yy());
+				if (this.hp < this.stats.hp){
+					var m = 20*this.hp/this.stats.hp;
+					g.fillStyle = "green";
+					g.fillRect(-10,-20,m,5)
+					g.fillStyle = "red";
+					g.fillRect(-10+m,-20,20-m,5)
+				}
+			}
 			return function(){
 				this.Combatable = {
 					superinit:superinit,
 					save:save,
 					load:load,
+					render:render,
 					respawn:respawn,
 					ondeath:ondeath,
 					dodamage:dodamage,
@@ -2502,10 +2513,15 @@ function TileRpgFramework(){
 		}
 		var Es = new (function(){
 		this.Man = function(wl){
+			arguments = Array.prototype.slice.call(arguments);
+			arguments.push({
+				att:2,
+				str:2,
+				def:2,
+				hp:7
+			})
 			E.apply(this,arguments);
 			this.type = "Man";
-			this.cb = 2;
-			this.maxhp = this.hp = 7;
 			/*this.ondeath = function(){
 				Trpg.board.ground.dropitem(new Trpg.Item("Bones"),this.loc);
 				var coins = new Trpg.Item("Coins");
@@ -2528,29 +2544,38 @@ function TileRpgFramework(){
 			}
 		}
 		this.Dummy = function(wl){
+			arguments = Array.prototype.slice.call(arguments);
+			arguments.push({
+				att:1,
+				str:1,
+				def:1,
+			})
 			E.apply(this,arguments);
 			this.w+=16;
 			this.h+=16;
 			this.x = this.loc.xx()-this.w/2;
 			this.y = this.loc.yy()-this.h/2;
 			this.type = "Dummy";
-			this.cb = 2;
-			this.maxhp = this.hp = 7;
 			this.update = function(){}
 			this.calcdamage = function(source){
 				var dmg = Math.round(source.maxhit*Math.random());
 				Trpg.BoardC.add(this.hitsplat(dmg,this.x+Math.random()*16+16,this.y+16));
-				this.hp = this.maxhp - dmg;
+				this.hp = this.stats.hp - dmg;
 			}
 			this.actions.examine = function(){
 				Trpg.Console.add("A training dummy, ready to be whacked");
 			}
 		}
 		this.Cow = function(wl){
+			arguments = Array.prototype.slice.call(arguments);
+			arguments.push({
+				att:1,
+				str:1,
+				def:1,
+				hp:8,
+			})
 			E.apply(this,arguments);
 			this.type = "Cow";
-			this.cb = 2;
-			this.maxhp = this.hp = 8;
 			/*this.ondeath = function(){
 				Trpg.board.ground.dropitem(new Trpg.Item("Bones"),this.loc);
 			}*/
@@ -2559,11 +2584,16 @@ function TileRpgFramework(){
 			}
 		}
 		this.Guard = function(wl){
+			arguments = Array.prototype.slice.call(arguments);
+			arguments.push({
+				att:10,
+				str:10,
+				def:10,
+				hp:40
+			})
 			E.apply(this,arguments);
 			this.type = "Guard";
-			this.cb = 16;
 			this.range = 3;
-			this.maxhp = this.hp = 25;
 			this.actionslist.unshift("pickpocket");
 			this.actions.pickpocket = function(){
 				Trpg.player.settarget(this,1,(function(){
@@ -2864,7 +2894,7 @@ function TileRpgFramework(){
 					//Entity:this.Entity.save.call(this)
 				}
 			}
-			this.maxhit = 2;
+			this.maxhit = Math.round(Trpg.Items.metals().map((m)=>m+"Arrow").indexOf(this.type)*2/3+1);
 			this.angle = ang;
 			this.targs = targs || ["Man","Cow","Guard","Dummy","Player"];
 			if (Trpg.pvp) this.targs.push("Player");
