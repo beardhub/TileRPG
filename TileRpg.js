@@ -959,6 +959,8 @@ function TileRpgFramework(){
 		var p = Trpg.player;
 		var multi = true;
 		switch (cmd){
+			case "clear":	Trpg.Console.clear();	return;
+			case "leave":	Trpg.Commands.forceremove(Trpg.player.id);	return;
 			case "cleararea":
 				var wl = new Trpg.WorldLoc(-1,1,3,3);
 				var v = 7;
@@ -1036,12 +1038,8 @@ function TileRpgFramework(){
 					return Trpg.Console.add("You need admin privileges for this command");
 				Trpg.socket && Trpg.socket.emit("affectentity",{id:Trpg.player.id,func:"sets",args:[{invis:eval(vals.shift()||true)}]});
 				return;
-			case "forceremove":
-				Trpg.socket && Trpg.socket.emit("removeentity",vals.shift());
-				return;
-			case "@s":
-				Trpg.setid = vals.shift();
-				return;
+			case "forceremove":		Trpg.Commands.forceremove(vals.shift());	return;
+			case "@s":	Trpg.setid = vals.shift();	return;
 			case "setimg":
 				var id = vals.shift();
 				if (!p.hasprivilege("admin") || id == "")
@@ -1093,8 +1091,10 @@ function TileRpgFramework(){
 			case "give":
 				var item = vals.shift();
 				var full = false;
-				if (item == "Arrows")
-					return Trpg.Items.metals().forEach((m)=>Trpg.Invent.additem(m+"Arrow",parseInt(vals.shift(),10) || 20));
+				if (item == "Arrows"){
+					var amt = vals.shift();
+					return Trpg.Items.metals().forEach((m)=>Trpg.Invent.additem(m+"Arrow",parseInt(amt,10) || 20));
+				}
 				if (item == "full"){
 					full = true;
 					item = vals.shift();
@@ -1200,14 +1200,7 @@ function TileRpgFramework(){
 					if (others[i].username == player)
 						return Trpg.socket && Trpg.socket.emit("removepriv",{username:player,privs:["admin"]});
 				return;
-			case "help":
-			Trpg.Commands.help();
-				return;
-				var str = "command list:\n";
-				str+="/listplayers -> lists online players and their coordinates\n";
-				str+="/give <item> <amount> -> gives <amount> of <item> to player (admin+ only)\n";
-				alert(str);
-				return;
+			case "help":	Trpg.Commands.help();	return;
 		}
 		return;
 	}
@@ -1220,8 +1213,14 @@ function TileRpgFramework(){
 			Trpg.Console.add("/switchmobile will switch to mobile layout to try out");
 			Trpg.Console.add("/cleararea fills the area with grass tiles");
 			Trpg.Console.add("/give Arrows <amt> will give <amt> of all arrows, 20 by default");
-			Trpg.Console.add("/give full <metal> will give a full set or <metal> armor");
+			Trpg.Console.add("/give full <metal> will givenod a full set or <metal> armor");
 			Trpg.Console.add("Metals are Bronze - Dragon + Eternium, must be capitalized");
+			Trpg.Console.add("/clear to clear the console and /leave to log out on mobile");
+		}
+		this.forceremove = function(id){
+			Trpg.socket && Trpg.socket.emit("removeentity",id);
+			if (id == Trpg.player.id)
+				location.reload(true);
 		}
 	})();
 	function amt2text(amt){
@@ -1652,21 +1651,24 @@ function TileRpgFramework(){
 	}*/
 	this.Console = new (function(){		
 		this.history = [];
-		this.vhistory= [];
+		//this.vhistory= [];
 		this.phistory= [];
 		this.timers  = [];
+		this.clear = function(){
+			this.history = [];
+		}
 		function msg(message, user, color){
 			return {m:message,u:user,c:color};
 		}
 		this.add = function(message, color, user){
 			this.history.push(msg(message,user,color));
-			this.vhistory.push(msg(message,user,color));
+			//this.vhistory.push(msg(message,user,color));
 			this.last = message;
 			if (Trpg.player && user == Trpg.player.username)
 				this.phistory.push(msg(message,user,color));
 		}
 		this.render = function(g){
-			var texts = this.vhistory;
+			var texts = this.history;
 			var h = g.measureText("M").width*1.1;
 			for (var i = 0; i < texts.length && i < 10; i++){
 				var u = texts[texts.length-i-1].u || "";
