@@ -42,7 +42,8 @@ function UIFramework(){
 			this.h = h || 0;
 			this.dblcdelay = dblct || (window.mobile?.65:.35);
 		}
-		function cdx(x){	return this.container.boxx(x)-this.x;	}
+		function cdx(x){	//console.log(this.container);
+		return this.container.boxx(x)-this.x;	}
 		function cdy(y){	return this.container.boxy(y)-this.y;	}
 		function cd(xy){	return [this.cdx(xy.x),this.cdy(xy.y)];	}
 		function onme(dx,dy){	return dx>=0&&dy>=0&&dx<this.w&&dy<this.h	}

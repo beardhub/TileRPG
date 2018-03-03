@@ -60,6 +60,10 @@ function TileRpgFramework(){
 					(this.copy().shift(0,1)),
 					(this.copy().shift(-1,0))]
 		}
+		this.center = function(){
+			this.mx = this.my = 16;
+			return this;
+		}
 		this.onmove = function(wl){return true}
 		this.move = function(mx,my){
 			this.mx+=mx;
@@ -872,7 +876,7 @@ function TileRpgFramework(){
 		}
 		return box;
 	}
-	function StartGame(){
+	function StartGame(){				//StartGame
 		if (!Trpg.player)
 			Trpg.player = new Trpg.Player(Trpg.username,false,true,Trpg.guest);
 		new Trpg.World("World 3");
@@ -886,8 +890,9 @@ function TileRpgFramework(){
 		command("give EterniumDagger");
 		command("give full Dragon");
 		command("give Shortbow");
+		command("give Arrows");
 		Math.seedrandom(Date.now());
-		Trpg.Timers.add(new Utils.Timer(5).start(true).setLoop(true).setAuto(true,function(){
+	if (false)	Trpg.Timers.add(new Utils.Timer(5).start(true).setLoop(true).setAuto(true,function(){
 			//var amt = 25;
 			//var arrow = Trpg.Items.metals().map((m)=>{return{t:m+"Arrow",amt:randr(1, amt, Math.round)}}).reduce((a,b)=>randr(0,4,Math.round)!==0?a:b);
 			//console.log(JSON.stringify(arrow));
@@ -980,7 +985,7 @@ function TileRpgFramework(){
 					Trpg.board.container.camera.zoom(amt);
 				return;
 			case "spawnitems":
-				Trpg.Timers.add(new Utils.Timer(parseFloat(vals.shift()) || .2).start(true).setLoop(true).setAuto(true,function(){
+				Trpg.Timers.add(new Utils.Timer(parseFloat(vals.shift()) || .5).start(true).setLoop(true).setAuto(true,function(){
 					//if (!(Trpg.BoardC && Trpg.BoardC.get("Items"))) return;
 					var t = rande(Trpg.Items.types);
 					var wl = new Trpg.WorldLoc(-1,1,3,3);
@@ -1076,26 +1081,6 @@ function TileRpgFramework(){
 			case "removeprivs":
 				Trpg.socket.emit("affectentity",{id:vals.shift(),func:"removeprivs",args:[vals]});
 				return;
-			case "unequipall":
-				Trpg.player.equipment = {	helm:-1,body:-1,legs:-1,kite:-1	};
-				return;
-			case "equipall":
-				Trpg.player.equipment = {
-					helm:"bronzehelmequip",
-					body:"bronzebodyequip",
-					legs:"bronzelegsequip",
-					kite:"bronzekiteequip"
-				};
-				return;
-			case "unequip":
-				var off = -1;
-			case "equip":
-				off = off || false;
-				var slot = vals.shift();
-				if (["helm","body","legs","kite"].indexOf(slot)==-1)
-					return;
-				Trpg.player.equipment[slot] = off || "bronze"+slot+"equip";
-				return;
 			case "C":	var type = "Cow";
 			case "D":	type = type || "Dummy";
 			case "M":	type = type || "Man";
@@ -1108,6 +1093,8 @@ function TileRpgFramework(){
 			case "give":
 				var item = vals.shift();
 				var full = false;
+				if (item == "Arrows")
+					return Trpg.Items.metals().forEach((m)=>Trpg.Invent.additem(m+"Arrow",parseInt(vals.shift(),10) || 20));
 				if (item == "full"){
 					full = true;
 					item = vals.shift();
@@ -1214,6 +1201,8 @@ function TileRpgFramework(){
 						return Trpg.socket && Trpg.socket.emit("removepriv",{username:player,privs:["admin"]});
 				return;
 			case "help":
+			Trpg.Commands.help();
+				return;
 				var str = "command list:\n";
 				str+="/listplayers -> lists online players and their coordinates\n";
 				str+="/give <item> <amount> -> gives <amount> of <item> to player (admin+ only)\n";
@@ -1222,6 +1211,19 @@ function TileRpgFramework(){
 		}
 		return;
 	}
+	this.Commands = new (function(){
+		this.help = function(){
+			Trpg.Console.add("/C, /D, /M, and /G to spawn entities");
+			Trpg.Console.add("/spawnitems will start spawning items and /stopitems will stop them");
+			Trpg.Console.add("/zoom <scale> will zoom the camera by scale, >1 zoom in <1 zoom out");
+			Trpg.Console.add("/setimg <image> will sets your image");
+			Trpg.Console.add("/switchmobile will switch to mobile layout to try out");
+			Trpg.Console.add("/cleararea fills the area with grass tiles");
+			Trpg.Console.add("/give Arrows <amt> will give <amt> of all arrows, 20 by default");
+			Trpg.Console.add("/give full <metal> will give a full set or <metal> armor");
+			Trpg.Console.add("Metals are Bronze - Dragon + Eternium, must be capitalized");
+		}
+	})();
 	function amt2text(amt){
 		var text = amt;
 		var mod = "";
@@ -1832,16 +1834,19 @@ function TileRpgFramework(){
 					else return;
 					Trpg.board.textinp.text = h[h.length-1-this.cyc].m;
 				},render:function(g){
-				var txt = Trpg.player.gettitle()+": "+Trpg.board.textinp.gettext()+"*";
-				var x = 3;
-				g.font = "25px Arial";
-				g.translate(0,this.container.h);
-				while (x+g.measureText(txt).width > Trpg.board.container.w)
-					x--;
-				if (Trpg.board.textinp.hasfocus())
-					Drw.drawCText(g,txt,x,-5,{alignx:"left",aligny:"bottom",boxcolor:"white",textcolor:"black"});
-				g.translate(0,-27);
-				Trpg.Console.render(g);
+					var gettext = Trpg.board.textinp.gettext();
+					if (gettext == "")
+						gettext = "Type /help for help";
+					var txt = Trpg.player.gettitle()+": "+gettext+"*";
+					var x = 3;
+					g.font = "25px Arial";
+					g.translate(0,this.container.h);
+					while (x+g.measureText(txt).width > Trpg.board.container.w)
+						x--;
+					if (Trpg.board.textinp.hasfocus())
+						Drw.drawCText(g,txt,x,-5,{alignx:"left",aligny:"bottom",boxcolor:"white",textcolor:"black"});
+					g.translate(3,-27);
+					Trpg.Console.render(g);
 			}});
 			bui.add({
 				render:function(g){
@@ -2095,16 +2100,17 @@ function TileRpgFramework(){
 		this.angle = ang;
 		this.traveled = 0;
 		this.step = function(dist){
-			if (this.blocked) 	return;
+			if (this.blocked) 	return true;
 			var dx = Math.cos(this.angle);
 			var dy = Math.sin(this.angle);
 			for (var i = 0; i < dist; i++){
 				this.loc.move(dx,dy);
-				if (this.onstep && this.onstep()) return;
+				if (this.onstep && this.onstep()) return true;
 			}
 			this.blocked = this.loc.blocked && !this.phase;
 			if (!this.blocked)
 				this.traveled+=dist;
+			return false;
 		}
 	}
 	function Entities(act){
@@ -2117,7 +2123,7 @@ function TileRpgFramework(){
 					return (Trpg.board.getTile(wl).traits.walkable) || this.type == "Player" && this.hasprivilege("phase");
 				}
 				this.id = id || this.type+(+new Date()).toString(16) + (Math.random() * 100000000 | 0).toString(16) + (Trpg.Entities.ids.length);
-				Trpg.BoardC.add(this,"Entities."+this.id);
+				Trpg.Entities.add(this,this.id);
 				Trpg.Entities.ids.push(this.id);
 				this.original && Trpg.socket && Trpg.socket.emit("newentity",this.save());
 				this.path = [];
@@ -2194,8 +2200,8 @@ function TileRpgFramework(){
 			function movetotarget(d){
 				if (this.path.length > 0 && this.nexttile.indist(this.loc,0)){
 					var p = this.path.shift().dir;
-					this.nexttile.shift(p.x,p.y);
-					this.nexttile.mx = this.nexttile.my = 16;	
+					this.nexttile.shift(p.x,p.y).center();
+					//this.nexttile.mx = this.nexttile.my = 16;	
 				}
 				if (this.path.length == 0 && this.target.loc.indist(this.loc,0))
 					this.nexttile = this.target.loc.copy();
@@ -2349,7 +2355,7 @@ function TileRpgFramework(){
 					} 
 					this.cb/=5;
 				this.actions.attack = function(){
-					Trpg.player.attack(this);
+					Trpg.player.startattack(this);
 				}
 				this.hp = this.stats.hp;
 				this.actionslist = ["examine"];
@@ -2358,7 +2364,7 @@ function TileRpgFramework(){
 				this.attrange = 1;
 			}
 			function hitsplat(dmg,x,y){
-				return makeTemp({dmg:dmg,x:x,y:y,a:1,rl:1,
+				return makeTemp({dmg:dmg,x:x,y:y,a:1,rl:3,
 					update:function(d){
 						this.y+=d*15;
 						this.a-=d*.8;
@@ -2404,7 +2410,7 @@ function TileRpgFramework(){
 					if (this.dmgid == dmgid)return;// alert("already hit");
 					this.dmgid = dmgid;
 					//alert("hit");
-					Trpg.BoardC.add(this.hitsplat(dmg,this.x+Math.random()*16+8,this.y+8),"Entities.");
+					Trpg.Entities.add(this.hitsplat(dmg,this.x+Math.random()*16+8,this.y+8));
 					this.hp-=dmg;
 				}// else //return;
 				if (this.hp <= 0){
@@ -2442,8 +2448,9 @@ function TileRpgFramework(){
 				}
 			}
 			function getactions(){
+				if (this.id == Trpg.player.id) return [];
 				var actions = this.actionslist.slice();
-				if (this.cb >= 10)
+				if (false && this.cb >= 10)
 					actions.push("attack");
 				else actions.unshift("attack");
 				return actions;
@@ -2533,10 +2540,6 @@ function TileRpgFramework(){
 				Trpg.player.settarget(this,1,(function(){
 					Trpg.player.target = -1;
 					Trpg.Invent.additem(new Trpg.Items.Coins(randr(1,3,Math.round)));
-					return;
-					//startaction(function(){
-						Trpg.invent.additem(new Trpg.Item("Coins"),Math.round(Math.random()*2+1));
-					// },this,.7);
 				}).bind(this));
 			}
 			this.actions.examine = function(){
@@ -2558,7 +2561,7 @@ function TileRpgFramework(){
 			this.type = "Dummy";
 			this.update = function(){}
 			this.calcdamage = function(source){
-				var dmg = Math.round(source.maxhit*Math.random());
+				var dmg = source.maxhit;//Math.round(source.maxhit*Math.random());
 				Trpg.BoardC.add(this.hitsplat(dmg,this.x+Math.random()*16+16,this.y+16));
 				this.hp = this.stats.hp - dmg;
 			}
@@ -2598,7 +2601,7 @@ function TileRpgFramework(){
 			this.actions.pickpocket = function(){
 				Trpg.player.settarget(this,1,(function(){
 					Trpg.player.target = -1;
-					Trpg.Invent.additem(new Trpg.Items.Coins(randr(5,15)));
+					Trpg.Invent.additem(new Trpg.Items.Coins(randr(5,15,Math.round)));
 					return;
 					startaction(function(){
 						Trpg.invent.additem(new Trpg.Item("Coins"),Math.round(Math.random()*5+10));
@@ -2634,8 +2637,10 @@ function TileRpgFramework(){
 			this.maxhp = this.hp = 10;
 			this.speed = 100;
 			this.online = true;
-			//if (this.original)
-			//	this.leftdown = function(){return false}
+			this.attacktarget = -1;
+			this.attacktimer = -1;
+			if (this.original)
+			this.leftdown = function(){return false}
 			this.actions.examine = function(){
 				Trpg.Console.add(this.gettitle());
 			}
@@ -2647,23 +2652,59 @@ function TileRpgFramework(){
 				weapon:-1,
 				ammo:-1
 			};
-			this.attack = function(target){
+			this.cancelattack = function(){
+				this.attacktarget = -1;
+				this.attacktimer.setAuto(true,function(){
+					this.attacktimer = -1;//new Utils.Timer(1).start(true);
+				});
+			}
+			this.attack = function(){
+				if (this.attacktarget == -1)
+					return;
 				if (this.equipment.weapon == -1 || this.equipment.weapon.type !== "Shortbow"){
 					Trpg.Console.add("You don't have a bow equipped");
+					this.cancelattack();
 					return;
 				} 
-				if (this.equipment.ammo.amt <= 1){
+				if (this.equipment.ammo.amt <= 0){
 					Trpg.Invent.removeitem(this.equipment.ammo);
 					this.equipment.ammo = -1;
+					this.cancelattack();
 					//return;
 				}
 				if (this.equipment.ammo == -1){
 					Trpg.Console.add("You don't have any arrows equipped");
+					this.cancelattack();
 					return;
 				}
 				this.equipment.ammo.amt--;
-				var a = Math.atan2(target.loc.yy()-this.loc.yy(),target.loc.xx()-this.loc.xx());
+				var a = Math.atan2(this.attacktarget.loc.yy()-this.loc.yy(),this.attacktarget.loc.xx()-this.loc.xx());
 					new Trpg.Entities[this.equipment.ammo.type](this.loc.copy(),false,true,a);
+				if (this.equipment.ammo.amt <= 0){
+					Trpg.Invent.removeitem(this.equipment.ammo);
+					this.equipment.ammo = -1;
+					this.cancelattack();
+					//return;
+				}
+			}
+			this.startattack = function(target){
+				this.attacktarget = target;
+				//if (this.attacktimer == -1)
+					this.attacktimer = new Utils.Timer(1).start(true);
+				//else this.attacktimer.setAuto(true,function(){
+				//	this.attacktimer = new Utils.Timer(1).start(true);
+				// });
+			}
+			this.update = function(d){
+				this.supers.Entity.update.call(this,d);
+				if (this.attacktarget !== -1 && this.attacktarget.dead)
+					this.cancelattack();
+				if (this.attacktimer == -1) return;
+				this.attacktimer.update(d);
+				if (this.attacktarget && !this.attacktarget.dead && this.attacktimer.consume()){
+					this.attack();
+					this.attacktimer.start();
+				}
 			}
 			this.inrender = function(g){
 				for (var p in this.equipment)
@@ -2894,7 +2935,7 @@ function TileRpgFramework(){
 					//Entity:this.Entity.save.call(this)
 				}
 			}
-			this.maxhit = Math.round(Trpg.Items.metals().map((m)=>m+"Arrow").indexOf(this.type)*2/3+1);
+			this.maxhit = Trpg.Items.metals().map((m)=>m+"Arrow").indexOf(this.type)+1;
 			this.angle = ang;
 			this.targs = targs || ["Man","Cow","Guard","Dummy","Player"];
 			if (Trpg.pvp) this.targs.push("Player");
@@ -2903,34 +2944,50 @@ function TileRpgFramework(){
 			this.los.loc.onmove = function(wl){
 				//if (Trpg.board.getTile(wl).type == "Grass"){
 				
-				if (Trpg.board.getTile(wl).traits.walkable || Trpg.board.getTile(wl).type == "Tree")
+				if (Trpg.board.getTile(wl).traits.walkable)// || Trpg.board.getTile(wl).type == "Tree")
 					return true || new Trpg.Tiles.Tree(wl) || true;
 				this.blocked = true;
+				return false;
+			}
+			this.ondelete = function(){
+				if (!this.original) return true;
+				if (randr(0,1)<.5)
+					new Trpg.Items[this.type]().doaction("drop",this.los.loc);
+					//Trpg.Items.add(new Trpg.Items[this.type]())
 				return true;
 			}
 			this.los.onstep = (function(){
-				if (!this.original)	return false;
-				var ents = Trpg.Entities.getents(this.loc);
+				if (!this.original || this.los.blocked)	return false;
+				var ents = Trpg.Entities.getents(this.los.loc);
 				for (var i = 0; i < ents.length; i++)
 					if (this.targs.indexOf(ents[i].type)!==-1){
 						ents[i].calcdamage(this);
 						//this.removeme();
+						this.los.blocked = true;
+						if (!this.removed)
 						Trpg.socket && Trpg.socket.emit("removeentity",this.id);
+						this.removed = true;
 						return true;
 					}
+				return false;
 			}).bind(this);
 			this.inited = true;
+			this.removed = false;
 			this.x = this.loc.xx();
 			this.y = this.loc.yy();
 			this.update = function(d){
-				this.los.step(d*350);
+				if (!this.los.blocked)
+					this.los.step(d*350);
+				if (this.los.blocked && !this.removed){
+					Trpg.socket && Trpg.socket.emit("removeentity",this.id);
+					this.removed = true;
+				}
 				this.invisible = !this.loc.indist(Trpg.player.loc,Trpg.board.viewsize);
 				this.x = this.loc.xx();
 				this.y = this.loc.yy();
 				if (this.original)
 					Trpg.Entsaves.add({s:this.save()});
-				if (this.los.blocked)
-					Trpg.socket && Trpg.socket.emit("removeentity",this.id);
+				//if (this.los.blocked)
 			}
 			this.inrender = function(g){
 				g.rotate(this.angle);
@@ -3178,20 +3235,6 @@ function TileRpgFramework(){
 				this.amt = 1;
 				this.alchvalue = -1;
 				this.actionslist = ["use","drop","examine"];
-				this.getactions = function(){
-					var acts = this.actionslist.slice();
-					if (K.Keys.shift.down && acts.indexOf("drop")!==-1){
-						acts.splice(acts.indexOf("drop"),1)
-						acts.unshift("drop");
-					}
-					return acts;
-				}
-				this.getinventacts = function(){
-					return ["use","drop","examine"];
-				}
-				this.getgroundacts = function(){
-					return ["pickup"];
-				}
 				this.actions.drop = function(wl){
 					this.loc = wl || Trpg.player.loc;
 					this.loc = this.loc.copy();
@@ -3200,19 +3243,12 @@ function TileRpgFramework(){
 							this.doaction("unequip");
 					if (this.container && this.container.systemname == "Invent")
 						Trpg.Invent.removeitem(this);
-					Trpg.BoardC.add(this,"Items.");
-					this.actionslist = this.getgroundacts();
-					this.loc.mx = this.loc.my = 16;
-					this.x = this.loc.xx()+randr(-32,0);
-					this.y = this.loc.yy()+randr(-32,0);
-					makeTemp(this,10,function(){
-						return this.container.systemname == "Items";
-					});
+					Trpg.Items.add(this);
 				}
 				this.actions.pickup = function(){
 					Trpg.player.settarget(this,0,function(){
-						console.log(this);
-						Trpg.BoardC.get("Items").remove(this);
+						this.dropdelay = false;
+						Trpg.Items.remove(this);
 						Trpg.Invent.additem(this);
 						this.actionslist = this.getinventacts();
 						delete this.loc;
@@ -3222,6 +3258,30 @@ function TileRpgFramework(){
 				this.actions.examine = function(){
 					Trpg.Console.add(this.type+(this.stackable?" x"+this.amt:""));
 				}
+			}
+			function ondelete(){}
+			function init(){
+				if (this.container.systemname !== "Items")
+					return;
+				this.actionslist = this.getgroundacts();
+				this.loc.center();
+				this.x = this.loc.xx()+randr(-32,0);
+				this.y = this.loc.yy()+randr(-32,0);
+				this.dropdelay = 45;
+			}
+			function getactions(){
+				var acts = this.actionslist.slice();
+				if (K.Keys.shift.down && acts.indexOf("drop")!==-1){
+					acts.splice(acts.indexOf("drop"),1)
+					acts.unshift("drop");
+				}
+				return acts;
+			}
+			function getinventacts(){
+				return ["use","drop","examine"];
+			}
+			function getgroundacts(){
+				return ["pickup"];
 			}
 			function inrender(g){
 				try {
@@ -3253,11 +3313,21 @@ function TileRpgFramework(){
 				if (this.stackable && this.container.systemname == "Invent")
 					g.fillText(text,2,7);
 			}
+			function update(d){
+				if (this.dropdelay && (this.dropdelay-=d)<0)
+					this.removeme();
+			}
 			return function(){
 				this.Item = {
 					superinit:superinit,
+					init:init,
+					ondelete:ondelete,
+					getactions:getactions,
+					getinventacts:getinventacts,
+					getgroundacts:getgroundacts,
 					inrender:inrender,
 					render:render,
+					update:update,
 				}
 				return this;
 			}
@@ -3269,13 +3339,6 @@ function TileRpgFramework(){
 				this.slot = this.slot.toLowerCase();
 				//this.equipimg = this.type+"Equip";
 				this.actionslist.unshift("equip");
-				this.getinventacts = function(){
-					var acts = ["use","drop","examine"];
-					if (Trpg.player.equipment[this.slot]==this)
-						acts.unshift("unequip");
-					else acts.unshift("equip");
-					return acts;
-				}
 				this.actions.equip = function(){
 					if (Trpg.player.equipment[this.slot]!==-1)
 						Trpg.player.equipment[this.slot].doaction("unequip");
@@ -3291,6 +3354,13 @@ function TileRpgFramework(){
 					this.actionslist.unshift("equip");
 				}
 			}
+			function getinventacts(){
+				var acts = ["use","drop","examine"];
+				if (Trpg.player.equipment[this.slot]==this)
+					acts.unshift("unequip");
+				else acts.unshift("equip");
+				return acts;
+			}
 			function renderequipped(g){
 				g.drawImage(Ast.i(this.img.toLowerCase()+"equip"),-16,-16);
 			}
@@ -3304,6 +3374,7 @@ function TileRpgFramework(){
 				this.Equipable = {
 					superinit:superinit,
 					inrender:inrender,
+					getinventacts:getinventacts,
 					renderequipped:renderequipped
 				}
 				return this;
@@ -3345,6 +3416,31 @@ function TileRpgFramework(){
 			I.call(this);	
 			this.stackable = true;
 			this.amt = amt || 1;
+			this.inrender = function(g){
+				var amts = [
+				{x:1,y:-3},
+				{x:1,y:3},
+				{x:-1,y:-6},
+				{x:-1,y:6},
+				]
+				try {
+					g.save();
+					g.translate(16,16);
+					g.rotate(-Math.PI/4);
+					g.scale(.9,.9);
+					g.translate(-16,-16);
+					g.drawImage(Ast.i(this.img.toLowerCase()),0,0);
+					for (var i = 0; i < this.amt-1 && i < amts.length; i++)
+					g.drawImage(Ast.i(this.img.toLowerCase()),amts[i].x,amts[i].y);
+					g.restore();
+					g.strokeStyle = "white";
+					if (Trpg.player.equipment[this.slot] == this)
+						g.strokeRect(.5,.5,this.w-1,this.h-1);
+				} catch(e) {
+					g.fillStyle = "black";
+					Drw.drawCText(g,this.img,16,16);
+				}
+			}
 		});
 		dmats.forEach((m)=>this[m+"Bar"] = function(){	I.call(this);	});
 		dmats.forEach((m)=>this[m+"Dagger"] = function(){
