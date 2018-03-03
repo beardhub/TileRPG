@@ -142,7 +142,7 @@ function assetsbit(){
 	makeasset("SteelBar");
 	makeasset("MithrilBar");
 	makeasset("AdamantBar");
-	makeasset("RuniteBar");
+	makeasset("RuneBar");
 	makeasset("EterniumBar");
 	makeasset("TinOre");
 	makeasset("CopperOre");
@@ -150,7 +150,7 @@ function assetsbit(){
 	makeasset("IronOre");
 	makeasset("MithrilOre");
 	makeasset("AdamantOre");
-	makeasset("RuniteOre");
+	makeasset("RuneOre");
 	makeasset("EterniumOre");
 	makeasset("Hammer");
 	makeasset("Knife");
