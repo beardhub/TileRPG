@@ -63,7 +63,7 @@ function UIFramework(){
 			if (this.isdown = this.isover = this.checkover(m)){
 				if (e.button == 0){
 					this.dblctime = this.dblcdelay;
-					return (this.leftdown && this.leftdown.apply(this,this.cd(m))) || (!this.leftdown && this.leftclick.apply(this,this.cd(m)));
+					return (this.leftdown && this.leftdown.apply(this,this.cd(m)));// || (!this.leftdown && this.leftclick.apply(this,this.cd(m)));
 				}
 				if (e.button == 2)
 					return this.rightdown && this.rightdown.apply(this,this.cd(m));
@@ -143,6 +143,7 @@ function UIFramework(){
 		this.key = "";
 		this.pcolor = "black";
 		this.text = "";
+		this.onclick = function(){}
 		var adjusted = false;
 		this.adjust = function(g){
 			g.font = ""+(this.h*.5)+"px Arial";
